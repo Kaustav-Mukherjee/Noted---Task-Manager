@@ -40,21 +40,27 @@ function YouTubeNowPlaying() {
             transition: 'all var(--transition-main)'
         }}>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#ff000022', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Youtube size={18} color="#ff0000" />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '32px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '100%' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#ff000022', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-main)' }}>
+                        <Youtube size={16} color="#ff0000" />
                     </div>
-                    <h3 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-main)' }}>Now Playing</h3>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)', lineHeight: '1' }}>Now Playing</h3>
                 </div>
                 <button
                     onClick={() => setShowInput(!showInput)}
                     style={{
-                        padding: '6px',
+                        width: '32px',
+                        height: '32px',
                         borderRadius: '8px',
                         backgroundColor: showInput ? 'var(--text-main)' : 'var(--bg-hover)',
                         color: showInput ? 'var(--bg-app)' : 'var(--text-muted)',
-                        transition: 'all 0.2s'
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all var(--transition-fast)',
+                        border: 'none',
+                        cursor: 'pointer'
                     }}
                 >
                     {showInput ? <X size={14} /> : <LinkIcon size={14} />}
@@ -62,7 +68,16 @@ function YouTubeNowPlaying() {
             </div>
 
             {showInput && (
-                <form onSubmit={handleUpdateVideo} style={{ display: 'flex', gap: '8px' }}>
+                <form
+                    className="fade-in"
+                    onSubmit={handleUpdateVideo}
+                    style={{
+                        display: 'flex',
+                        gap: '8px',
+                        animation: 'fadeInSlideUp 0.3s var(--ease-apple)',
+                        transition: 'all var(--transition-main)'
+                    }}
+                >
                     <input
                         type="text"
                         placeholder="Paste YouTube Link or ID..."
@@ -76,14 +91,16 @@ function YouTubeNowPlaying() {
                             padding: '8px 12px',
                             fontSize: '0.75rem',
                             color: 'var(--text-main)',
-                            outline: 'none'
+                            outline: 'none',
+                            transition: 'all var(--transition-fast)'
                         }}
                     />
-                    <button type="submit" style={{ padding: '8px 12px', backgroundColor: 'var(--text-main)', color: 'var(--bg-app)', borderRadius: '10px', fontSize: '0.75rem', fontWeight: '700' }}>
+                    <button type="submit" style={{ padding: '8px 16px', backgroundColor: 'var(--text-main)', color: 'var(--bg-app)', borderRadius: '10px', fontSize: '0.75rem', fontWeight: '700', transition: 'all var(--transition-fast)' }}>
                         Set
                     </button>
                 </form>
             )}
+
 
             <div style={{
                 width: '100%',
