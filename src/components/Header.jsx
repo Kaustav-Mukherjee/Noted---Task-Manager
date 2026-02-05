@@ -18,7 +18,7 @@ function Header({ theme, toggleTheme, user, onSignInClick }) {
     return (
         <div className="header-container">
             <div className="brand-section">
-                <div className="card-hover" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px', cursor: 'pointer', transition: 'all var(--transition-main)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                     <CheckSquare size={32} strokeWidth={2.5} />
                     <h1 style={{ fontWeight: '700', letterSpacing: '-0.03em' }}>Noted</h1>
                 </div>
