@@ -170,3 +170,48 @@ export const subscribeFolders = (userId, callback) => {
         callback(folders);
     });
 };
+// Goals Collection
+export const goalsCollection = (userId) => collection(db, 'users', userId, 'goals');
+
+export const updateGoal = async (userId, goalId, goalHours) => {
+    // For simplicity, we'll use 'dailyStudyGoal' as the ID for now
+    const goalRef = doc(db, 'users', userId, 'goals', goalId);
+    await updateDoc(goalRef, {
+        hours: parseFloat(goalHours),
+        updatedAt: serverTimestamp()
+    }).catch(async (error) => {
+        if (error.code === 'not-found') {
+            await addDoc(goalsCollection(userId), {
+                id: goalId,
+                hours: parseFloat(goalHours),
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        }
+    });
+};
+
+export const setInitialGoal = async (userId, goalHours) => {
+    const q = query(goalsCollection(userId), where('id', '==', 'dailyStudyGoal'));
+    // If doesn't exist, create it
+    await addDoc(goalsCollection(userId), {
+        id: 'dailyStudyGoal',
+        hours: parseFloat(goalHours),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    });
+};
+
+export const subscribeGoals = (userId, callback) => {
+    const q = query(goalsCollection(userId));
+    return onSnapshot(q, (snapshot) => {
+        const goals = {};
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            goals[data.id || doc.id] = { id: doc.id, ...data };
+        });
+        callback(goals);
+    });
+};
+
+

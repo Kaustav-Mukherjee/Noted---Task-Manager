@@ -6,17 +6,24 @@ import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
 import FocusMusic from './FocusMusic';
 import QuotesSection from './QuotesSection';
+import FocusTimer from './FocusTimer';
+import YouTubeNowPlaying from './YouTubeNowPlaying';
+import { Goal, Zap } from 'lucide-react';
+
 
 function Dashboard({
     tasks, reminders, onAddReminder, onDeleteReminder, onUpdateReminder,
     notes, folders, onAddNote, onUpdateNote, onDeleteNote,
     onAddFolder, onUpdateFolder, onDeleteFolder,
     studySessions, addStudySession, onDeleteStudySession,
-    streak
+    streak, goals, updateGoal
 }) {
     const [timeRange, setTimeRange] = useState('Week');
     const [studyTimeRange, setStudyTimeRange] = useState('Week');
     const [studyHours, setStudyHours] = useState('');
+    const [goalInput, setGoalInput] = useState('');
+    const [showGoalModal, setShowGoalModal] = useState(false);
+
     const [showStudyModal, setShowStudyModal] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDateData, setSelectedDateData] = useState(null);
@@ -131,6 +138,17 @@ function Dashboard({
         }
     }, [studySessions, studyTimeRange, today]);
 
+    const dailyGoalHours = goals?.dailyStudyGoal?.hours || 4; // Default 4 hours if not set
+
+    const todayStudyHours = useMemo(() => {
+        return studySessions
+            .filter(s => isSameDay(new Date(s.date), today))
+            .reduce((acc, curr) => acc + curr.hours, 0);
+    }, [studySessions, today]);
+
+    const goalProgress = Math.min(100, (todayStudyHours / dailyGoalHours) * 100);
+
+
     // Calendar logic based on current month
     const monthStart = startOfMonth(currentMonth);
     const calendarStart = startOfWeek(monthStart);
@@ -147,6 +165,16 @@ function Dashboard({
         addStudySession(hours);
         setStudyHours('');
     };
+
+    const handleUpdateGoal = (e) => {
+        e.preventDefault();
+        const hours = parseFloat(goalInput);
+        if (isNaN(hours) || hours <= 0) return;
+        updateGoal('dailyStudyGoal', hours);
+        setShowGoalModal(false);
+        setGoalInput('');
+    };
+
 
     // Time Range Toggle Component
     const TimeRangeToggle = ({ value, onChange }) => (
@@ -299,7 +327,72 @@ function Dashboard({
                     </div>
                 </div>
 
+                {/* Daily Goal Progress Bar */}
+                <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Goal size={14} color="var(--text-muted)" />
+                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)' }}>Daily Goal</span>
+                        </div>
+                        <span
+                            onClick={() => {
+                                setGoalInput(dailyGoalHours.toString());
+                                setShowGoalModal(true);
+                            }}
+                            style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-main)', cursor: 'pointer' }}
+                        >
+                            {todayStudyHours.toFixed(1)} / {dailyGoalHours}h
+                        </span>
+                    </div>
+                    <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-hover)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{
+                            width: `${goalProgress}%`,
+                            height: '100%',
+                            backgroundColor: 'var(--text-main)',
+                            borderRadius: '3px',
+                            transition: 'width 0.5s ease'
+                        }}></div>
+                    </div>
+                </div>
+
+                {/* Goal Setting Modal */}
+                {showGoalModal && (
+                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+                        <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '20px', width: '90%', maxWidth: '350px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h4 style={{ fontWeight: '700' }}>Set Daily Goal</h4>
+                                <button onClick={() => setShowGoalModal(false)}><X size={20} /></button>
+                            </div>
+                            <form onSubmit={handleUpdateGoal} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Hours per day</label>
+                                    <input
+                                        type="number"
+                                        step="0.5"
+                                        autoFocus
+                                        value={goalInput}
+                                        onChange={(e) => setGoalInput(e.target.value)}
+                                        style={{
+                                            background: 'var(--bg-hover)',
+                                            border: '1px solid var(--border)',
+                                            color: 'var(--text-main)',
+                                            padding: '12px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            outline: 'none'
+                                        }}
+                                    />
+                                </div>
+                                <button type="submit" style={{ background: 'var(--text-main)', color: 'var(--bg-app)', padding: '12px', borderRadius: '12px', fontWeight: '700' }}>
+                                    Save Goal
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
                 <div style={{ marginBottom: '10px' }}>
+
                     <TimeRangeToggle value={studyTimeRange} onChange={setStudyTimeRange} />
                 </div>
 
@@ -546,7 +639,21 @@ function Dashboard({
                 </div>
             )}
 
+            {/* Focus & Entertainment Section */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Zap size={18} fill="var(--text-main)" stroke="none" />
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--spacing-md)' }}>
+                    <FocusTimer onTimerComplete={(hours) => addStudySession(hours)} />
+                    <YouTubeNowPlaying />
+                </div>
+            </div>
+
             {/* Reminders Section */}
+
             <RemindersCard
                 reminders={reminders}
                 onAddReminder={onAddReminder}

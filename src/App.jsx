@@ -19,6 +19,8 @@ function App() {
     const [notes, setNotes] = useState([]);
     const [folders, setFolders] = useState([]);
     const [studySessions, setStudySessions] = useState([]);
+    const [goals, setGoals] = useState({});
+
 
     // Subscribe to Firestore when user is authenticated
     useEffect(() => {
@@ -57,13 +59,21 @@ function App() {
             setFolders(firestoreFolders);
         });
 
+        // Subscribe to goals
+        const unsubGoals = firestoreService.subscribeGoals(user.uid, (firestoreGoals) => {
+            setGoals(firestoreGoals);
+        });
+
+
         return () => {
             unsubTasks();
             unsubReminders();
             unsubStudy();
             unsubNotes();
             unsubFolders();
+            unsubGoals();
         };
+
     }, [user]);
 
     const streak = useMemo(() => {
@@ -209,6 +219,11 @@ function App() {
         if (user) await firestoreService.deleteFolder(user.uid, id);
     };
 
+    const updateGoal = async (goalId, hours) => {
+        if (user) await firestoreService.updateGoal(user.uid, goalId, hours);
+    };
+
+
     if (!user) {
         return (
             <div style={{
@@ -290,7 +305,10 @@ function App() {
                         addStudySession={addStudySession}
                         onDeleteStudySession={deleteStudySession}
                         streak={streak}
+                        goals={goals}
+                        updateGoal={updateGoal}
                     />
+
                 </div>
             </div>
 
