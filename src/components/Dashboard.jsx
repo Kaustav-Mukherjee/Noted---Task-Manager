@@ -203,19 +203,19 @@ function Dashboard({
 
             {/* Top Row: Streak & Quotes */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
-                <div className="fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
+                <div className="fade-in" style={{ padding: '20px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '20px', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
                         </div>
-                        <div>
-                            <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)' }}>{streak}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Day Streak</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div style={{ fontSize: '1.4rem', fontWeight: '850', color: 'var(--text-main)', lineHeight: '1' }}>{streak}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.05em' }}>Day Streak</div>
                         </div>
                     </div>
 
                     {/* Dynamic Milestone Badges */}
-                    <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '10px', borderTop: '1px solid var(--border)', paddingTop: '16px', flexWrap: 'wrap' }}>
                         {(() => {
                             const coreMilestones = [
                                 { days: 1, label: '1D' },
@@ -236,17 +236,17 @@ function Dashboard({
                                 <div
                                     key={days}
                                     style={{
-                                        minWidth: '32px',
-                                        padding: '4px 6px',
-                                        borderRadius: '6px',
-                                        fontSize: '0.6rem',
-                                        fontWeight: '700',
+                                        minWidth: '38px',
+                                        padding: '6px 8px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.65rem',
+                                        fontWeight: '800',
                                         textAlign: 'center',
                                         backgroundColor: streak >= days ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-hover)',
                                         color: streak >= days ? '#ef4444' : 'var(--text-muted)',
                                         border: streak >= days ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
-                                        opacity: streak >= days ? 1 : 0.5,
-                                        transition: 'all 0.3s ease'
+                                        opacity: streak >= days ? 1 : 0.6,
+                                        transition: 'all 0.3s var(--ease-apple)'
                                     }}
                                 >
                                     {label}
