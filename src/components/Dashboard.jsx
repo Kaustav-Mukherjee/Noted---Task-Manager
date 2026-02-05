@@ -6,9 +6,8 @@ import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
 import FocusMusic from './FocusMusic';
 import QuotesSection from './QuotesSection';
-import FocusTimer from './FocusTimer';
-import YouTubeNowPlaying from './YouTubeNowPlaying';
-import { Goal, Zap } from 'lucide-react';
+import { Goal } from 'lucide-react';
+
 
 
 function Dashboard({
@@ -639,18 +638,6 @@ function Dashboard({
                 </div>
             )}
 
-            {/* Focus & Entertainment Section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Zap size={18} fill="var(--text-main)" stroke="none" />
-                    <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--spacing-md)' }}>
-                    <FocusTimer onTimerComplete={(hours) => addStudySession(hours)} />
-                    <YouTubeNowPlaying />
-                </div>
-            </div>
 
             {/* Reminders Section */}
 

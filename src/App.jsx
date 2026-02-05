@@ -6,7 +6,11 @@ import TaskInput from './components/TaskInput';
 import TaskList from './components/TaskList';
 import Dashboard from './components/Dashboard';
 import AuthModal from './components/AuthModal';
+import FocusTimer from './components/FocusTimer';
+import YouTubeNowPlaying from './components/YouTubeNowPlaying';
+import { Zap } from 'lucide-react';
 import * as firestoreService from './services/firestoreService';
+
 
 function App() {
     const { user } = useAuth();
@@ -282,7 +286,26 @@ function App() {
                             onToggle={toggleTask}
                             onDelete={deleteTask}
                         />
+
+                        {/* Focus Mode - Side by Side */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-md)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Zap size={18} fill="var(--text-main)" stroke="none" />
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
+                            </div>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: 'var(--spacing-lg)',
+                                alignItems: 'start'
+                            }}>
+                                <FocusTimer onTimerComplete={(hours) => addStudySession(hours)} />
+                                <YouTubeNowPlaying />
+                            </div>
+                        </div>
                     </div>
+
                 </div>
 
                 {/* Dashboard - Right Side */}
