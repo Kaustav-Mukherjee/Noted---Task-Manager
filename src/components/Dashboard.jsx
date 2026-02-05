@@ -256,14 +256,15 @@ function Dashboard({
                     </div>
                 </div>
 
-                <div className="card-hover fade-in" style={{ height: '100%', transition: 'all var(--transition-main)' }}>
+                <div className="fade-in" style={{ height: '100%', transition: 'all var(--transition-main)' }}>
                     <QuotesSection />
                 </div>
 
             </div>
 
             {/* Task Activity Card */}
-            <div className="card-hover fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+            <div className="fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -317,7 +318,8 @@ function Dashboard({
             </div>
 
             {/* Study Hours Card with Time Range Toggle */}
-            <div className="card-hover fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+            <div className="fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
