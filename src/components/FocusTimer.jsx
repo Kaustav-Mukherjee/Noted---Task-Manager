@@ -61,32 +61,42 @@ function FocusTimer({ onTimerComplete }) {
 
     return (
         <div style={{
-            padding: '20px',
+            padding: '16px',
             backgroundColor: 'var(--bg-card)',
             borderRadius: 'var(--radius)',
             border: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '20px',
+            justifyContent: 'space-between',
+            gap: '12px',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            height: '100%',
+            flex: 1
         }}>
-            <div style={{ display: 'flex', gap: '8px', zIndex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Zap size={18} color={MODES[mode].color} fill={MODES[mode].color} />
+                </div>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-main)' }}>Focus Session</h3>
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px', zIndex: 1, backgroundColor: 'var(--bg-hover)', padding: '4px', borderRadius: '14px' }}>
                 {Object.keys(MODES).map((k) => (
                     <button
                         key={k}
                         onClick={() => switchMode(k)}
                         style={{
-                            padding: '6px 12px',
-                            borderRadius: '12px',
-                            fontSize: '0.7rem',
-                            fontWeight: '700',
-                            backgroundColor: mode === k ? MODES[k].color : 'var(--bg-hover)',
+                            padding: '6px 10px',
+                            borderRadius: '10px',
+                            fontSize: '0.65rem',
+                            fontWeight: '750',
+                            backgroundColor: mode === k ? MODES[k].color : 'transparent',
                             color: mode === k ? 'var(--bg-app)' : 'var(--text-muted)',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transition: 'all 0.3s ease',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.04em'
                         }}
                     >
                         {MODES[k].label}
@@ -94,19 +104,19 @@ function FocusTimer({ onTimerComplete }) {
                 ))}
             </div>
 
-            <div style={{ position: 'relative', width: '160px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="160" height="160" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.1))' }}>
+            <div style={{ position: 'relative', width: '140px', height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="140" height="140" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
                     <circle
                         cx="80" cy="80" r="74"
                         fill="none"
                         stroke="var(--bg-hover)"
-                        strokeWidth="8"
+                        strokeWidth="10"
                     />
                     <circle
                         cx="80" cy="80" r="74"
                         fill="none"
                         stroke={MODES[mode].color}
-                        strokeWidth="8"
+                        strokeWidth="10"
                         strokeLinecap="round"
                         strokeDasharray={2 * Math.PI * 74}
                         strokeDashoffset={2 * Math.PI * 74 * (1 - progress / 100)}
@@ -114,38 +124,35 @@ function FocusTimer({ onTimerComplete }) {
                     />
                 </svg>
                 <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: '2.2rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
                         {formatTime(timeLeft)}
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '16px', zIndex: 1 }}>
+            <div style={{ display: 'flex', gap: '12px', zIndex: 1 }}>
                 <button
                     onClick={toggleTimer}
                     style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '18px',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '16px',
                         backgroundColor: 'var(--text-main)',
                         color: 'var(--bg-app)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        boxShadow: '0 8px 20px rgba(0,0,0,0.3)'
+                        transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                     }}
-                    onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.92)'}
-                    onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                    {isActive ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: '4px' }} />}
+                    {isActive ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: '2px' }} />}
                 </button>
                 <button
                     onClick={resetTimer}
                     style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '18px',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '16px',
                         backgroundColor: 'var(--bg-hover)',
                         color: 'var(--text-main)',
                         display: 'flex',
@@ -155,15 +162,14 @@ function FocusTimer({ onTimerComplete }) {
                         transition: 'all 0.2s'
                     }}
                 >
-                    <RotateCcw size={22} />
+                    <RotateCcw size={18} />
                 </button>
             </div>
 
-            {mode === 'FOCUS' && timeLeft > 0 && (
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Zap size={12} /> Stay focused!
-                </div>
-            )}
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontStyle: 'italic', height: '14px' }}>
+                {mode === 'FOCUS' && timeLeft > 0 ? 'Stay focused on your task.' : '\u00A0'}
+            </div>
+
         </div>
     );
 }

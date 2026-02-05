@@ -34,7 +34,9 @@ function YouTubeNowPlaying() {
             border: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px'
+            justifyContent: 'space-between',
+            gap: '12px',
+            height: '100%'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
