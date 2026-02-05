@@ -96,6 +96,14 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                     animation: completeFadeOut 0.8s ease-in-out forwards !important;
                     pointer-events: none;
                 }
+                
+                @keyframes slideFadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .view-transition {
+                    animation: slideFadeIn 0.4s var(--ease-apple) forwards;
+                }
                 `}
             </style>
             {/* Header */}
@@ -121,7 +129,7 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        transition: 'all 0.2s ease',
+                        transition: 'all 0.3s var(--ease-apple)',
                         transform: showAddForm ? 'rotate(45deg)' : 'rotate(0deg)'
                     }}
                 >
@@ -154,7 +162,8 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                             fontWeight: view === key ? '600' : '400',
                             backgroundColor: view === key ? 'var(--bg-card)' : 'transparent',
                             color: view === key ? 'var(--text-main)' : 'var(--text-muted)',
-                            transition: 'all 0.25s ease'
+                            transition: 'all 0.3s var(--ease-apple)',
+                            boxShadow: view === key ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
                         }}
                     >
                         {label}
@@ -164,10 +173,10 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
 
             {/* Add/Edit Reminder Form */}
             <div style={{
-                maxHeight: showAddForm ? '250px' : '0',
+                maxHeight: showAddForm ? '280px' : '0',
                 opacity: showAddForm ? 1 : 0,
                 overflow: 'hidden',
-                transition: 'all 0.3s ease',
+                transition: 'all 0.4s var(--ease-apple)',
                 marginBottom: showAddForm ? '12px' : '0'
             }}>
                 <form onSubmit={handleSubmit} style={{
@@ -176,7 +185,9 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                     gap: '8px',
                     padding: '12px',
                     backgroundColor: 'var(--bg-input)',
-                    borderRadius: '12px'
+                    borderRadius: '12px',
+                    transform: showAddForm ? 'scale(1)' : 'scale(0.95)',
+                    transition: 'transform 0.4s var(--ease-apple)'
                 }}>
                     <input
                         type="text"
@@ -260,7 +271,8 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px'
+                            gap: '6px',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                         }}
                     >
                         <Check size={16} /> {editingId ? 'Update' : 'Add'} Reminder
@@ -269,7 +281,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
             </div>
 
             {/* Reminders List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+                key={view}
+                className="view-transition"
+                style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+            >
                 {filteredReminders.length === 0 ? (
                     <div style={{
                         textAlign: 'center',
@@ -290,10 +306,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                 backgroundColor: 'var(--bg-input)',
                                 borderRadius: '12px',
                                 cursor: 'pointer',
-                                transition: 'all 0.25s ease',
+                                transition: 'all 0.4s var(--ease-apple)',
                                 transform: expandedId === rem.id ? 'scale(1.02)' : 'scale(1)',
-                                boxShadow: expandedId === rem.id ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
-                                borderLeft: rem.completed ? '4px solid #22c55e' : 'none'
+                                boxShadow: expandedId === rem.id ? '0 8px 24px rgba(0,0,0,0.15)' : 'none',
+                                borderLeft: rem.completed ? '4px solid #22c55e' : 'none',
+                                border: expandedId === rem.id ? '1px solid var(--border)' : '1px solid transparent'
                             }}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -305,12 +322,12 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    transition: 'all 0.2s ease'
+                                    transition: 'all 0.3s var(--ease-apple)'
                                 }}>
                                     {rem.completed ? <Check size={14} color="white" /> : <Bell size={14} color={rem.active ? 'var(--bg-app)' : 'var(--text-muted)'} />}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: '500', textDecoration: rem.completed ? 'line-through' : 'none', color: rem.completed ? 'var(--text-muted)' : 'inherit' }}>{rem.title}</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '500', transition: 'all 0.3s ease', textDecoration: rem.completed ? 'line-through' : 'none', color: rem.completed ? 'var(--text-muted)' : 'inherit' }}>{rem.title}</div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                                             <Clock size={10} /> {rem.time}
@@ -327,17 +344,17 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                     style={{
                                         color: 'var(--text-muted)',
                                         transform: expandedId === rem.id ? 'rotate(180deg)' : 'rotate(0deg)',
-                                        transition: 'transform 0.2s ease'
+                                        transition: 'transform 0.4s var(--ease-apple)'
                                     }}
                                 />
                             </div>
 
                             {/* Expanded Details Popover */}
                             <div style={{
-                                maxHeight: expandedId === rem.id ? '80px' : '0',
+                                maxHeight: expandedId === rem.id ? '100px' : '0',
                                 opacity: expandedId === rem.id ? 1 : 0,
                                 overflow: 'hidden',
-                                transition: 'all 0.25s ease',
+                                transition: 'all 0.4s var(--ease-apple)',
                                 marginTop: expandedId === rem.id ? '10px' : '0',
                                 paddingTop: expandedId === rem.id ? '10px' : '0',
                                 borderTop: expandedId === rem.id ? '1px solid var(--border)' : 'none'
@@ -354,8 +371,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            gap: '4px'
+                                            gap: '4px',
+                                            transition: 'all 0.2s ease'
                                         }}
+                                        onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.2)'}
+                                        onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
                                     >
                                         <Edit2 size={12} /> Edit
                                     </button>
@@ -367,8 +387,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                             borderRadius: '6px',
                                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
                                             color: '#ef4444',
-                                            fontSize: '0.7rem'
+                                            fontSize: '0.7rem',
+                                            transition: 'all 0.2s ease'
                                         }}
+                                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
+                                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
                                     >
                                         Delete
                                     </button>
@@ -381,8 +404,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                                 borderRadius: '6px',
                                                 backgroundColor: '#22c55e',
                                                 color: 'white',
-                                                fontSize: '0.7rem'
+                                                fontSize: '0.7rem',
+                                                transition: 'all 0.2s ease'
                                             }}
+                                            onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                                            onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
                                         >
                                             Complete
                                         </button>
