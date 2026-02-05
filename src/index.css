@@ -1,0 +1,197 @@
+:root {
+    --bg-app: #0c0c0e;
+    --bg-card: #141417;
+    --bg-input: #1c1c21;
+    --bg-hover: #2a2a30;
+
+    --text-main: #f0f0f2;
+    --text-muted: #888891;
+
+    --border: #2d2d35;
+    --radius: 20px;
+    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+}
+
+[data-theme="light"] {
+    --bg-app: #f8f9fa;
+    --bg-card: #ffffff;
+    --bg-input: #f1f3f5;
+    --bg-hover: #e9ecef;
+
+    --text-main: #1a1a1b;
+    --text-muted: #6c757d;
+
+    --border: #dee2e6;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+}
+
+#root {
+    width: 100%;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    color: inherit;
+}
+
+input,
+textarea {
+    border: none;
+    background: none;
+    font-family: inherit;
+    color: inherit;
+    outline: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Responsive Layout Classes */
+.app-container {
+    display: flex;
+    width: 100%;
+    min-height: 95vh;
+    gap: var(--spacing-lg);
+    flex-direction: row;
+}
+
+.main-content {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+    min-width: 0;
+}
+
+.dashboard-sidebar {
+    flex: 1;
+    min-width: 380px;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+}
+
+.brand-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+@media (max-width: 1024px) {
+    #root {
+        padding: var(--spacing-md);
+    }
+
+    .app-container {
+        flex-direction: column;
+        gap: var(--spacing-xl);
+    }
+
+    .dashboard-sidebar {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --spacing-lg: 16px;
+        --spacing-xl: 24px;
+    }
+
+    #root {
+        padding: var(--spacing-sm);
+    }
+
+    h1 {
+        font-size: 1.8rem !important;
+    }
+
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .nav-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: var(--spacing-xs);
+    }
+
+    .app-container {
+        gap: var(--spacing-lg);
+    }
+
+    /* Improve dashboard cards on mobile */
+    .dashboard-sidebar>div {
+        padding: 12px !important;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
