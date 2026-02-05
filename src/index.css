@@ -120,6 +120,15 @@ textarea {
     border-color: rgba(255, 255, 255, 0.15);
 }
 
+.shadow-hover {
+    transition: box-shadow var(--transition-main), border-color var(--transition-main);
+}
+
+.shadow-hover:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
 
 /* Responsive Layout Classes */
 .app-container {

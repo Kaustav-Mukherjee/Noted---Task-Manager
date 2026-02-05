@@ -113,7 +113,8 @@ function FocusTimer({ onTimerComplete }) {
     };
 
     return (
-        <div className="card-hover" style={{
+        <div className="shadow-hover" style={{
+
             padding: '24px',
             backgroundColor: 'var(--bg-card)',
             borderRadius: 'var(--radius)',
