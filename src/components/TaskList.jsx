@@ -121,7 +121,7 @@ function TaskItem({ task, onToggle, onDelete }) {
         <div
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="card-hover fade-in"
+            className="shadow-hover fade-in"
             style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -130,11 +130,12 @@ function TaskItem({ task, onToggle, onDelete }) {
                 borderRadius: 'var(--radius)',
                 transition: 'all var(--transition-main)',
                 cursor: 'pointer',
-                border: '1px solid var(--border)'
+                border: '1px solid var(--border)',
+                position: 'relative'
             }}
         >
             <button
-                onClick={() => onToggle(task.id)}
+                onClick={(e) => { e.stopPropagation(); onToggle(task.id); }}
                 style={{
                     marginRight: '16px',
                     display: 'flex',
@@ -142,7 +143,8 @@ function TaskItem({ task, onToggle, onDelete }) {
                     justifyContent: 'center',
                     color: task.completed ? 'var(--text-main)' : 'var(--text-muted)',
                     transition: 'all var(--transition-main)',
-                    transform: task.completed ? 'scale(1.1)' : 'scale(1)'
+                    transform: task.completed ? 'scale(1.1)' : 'scale(1)',
+                    flexShrink: 0
                 }}
             >
                 {task.completed ? (
@@ -164,34 +166,51 @@ function TaskItem({ task, onToggle, onDelete }) {
             </button>
 
 
-            <span style={{
-                flex: 1,
-                fontSize: '1rem',
-                color: task.completed ? 'var(--text-muted)' : 'var(--text-main)',
-                textDecoration: task.completed ? 'line-through' : 'none',
-                opacity: task.completed ? 0.6 : 1,
-                transition: 'all var(--transition-main)',
-                transform: task.completed ? 'translateX(4px)' : 'translateX(0)'
-            }}>
+            <span
+                onClick={() => onToggle(task.id)}
+                style={{
+                    flex: 1,
+                    fontSize: '0.95rem',
+                    color: task.completed ? 'var(--text-muted)' : 'var(--text-main)',
+                    textDecoration: task.completed ? 'line-through' : 'none',
+                    opacity: task.completed ? 0.6 : 1,
+                    transition: 'all 0.4s var(--ease-apple)',
+                    transform: task.completed ? 'translateX(4px)' : 'translateX(0)',
+                    userSelect: 'none'
+                }}>
                 {task.text}
             </span>
 
 
-            {isHovered && (
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                opacity: isHovered ? 1 : 0,
+                transform: isHovered ? 'translateX(0)' : 'translateX(8px)',
+                transition: 'all 0.3s var(--ease-apple)',
+                pointerEvents: isHovered ? 'auto' : 'none',
+                flexShrink: 0,
+                marginLeft: '12px'
+            }}>
                 <button
                     onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
                     style={{
                         color: '#ef4444',
-                        padding: '4px',
-                        opacity: 0.8,
-                        transition: 'opacity 0.2s'
+                        padding: '8px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        transition: 'all 0.2s ease'
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-                    onMouseOut={(e) => e.currentTarget.style.opacity = '0.8'}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
                 >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                 </button>
-            )}
+            </div>
         </div>
     );
 }
