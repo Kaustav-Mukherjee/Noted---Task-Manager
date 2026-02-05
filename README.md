@@ -1,4 +1,4 @@
-# Noted App
+# Noted - Task Manager
 
 A modern, fast, and interactive To-Do application built with React, Vite, and Firebase.
 
@@ -28,7 +28,7 @@ A modern, fast, and interactive To-Do application built with React, Vite, and Fi
 
 1. Clone the repository:
    ```bash
-   git clone [your-repo-url]
+   git clone https://github.com/Kaustav-Mukherjee/Noted---Task-Manager.git
    ```
 2. Install dependencies:
    ```bash
@@ -45,7 +45,8 @@ A modern, fast, and interactive To-Do application built with React, Vite, and Fi
 This app is deployed on Vercel. You can visit the live site at: **[Coming Soon]**
 
 ### GitHub
-The source code is available on GitHub: **[Coming Soon]**
+The source code is available on GitHub: [https://github.com/Kaustav-Mukherjee/Noted---Task-Manager](https://github.com/Kaustav-Mukherjee/Noted---Task-Manager)
 
 ## License
 MIT
+
