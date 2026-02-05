@@ -203,15 +203,42 @@ function Dashboard({
 
             {/* Top Row: Streak & Quotes */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
-                <div className="card-hover" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
+                <div className="fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)' }}>{streak}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Day Streak</div>
+                        </div>
                     </div>
-                    <div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)' }}>{streak}</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Day Streak</div>
+
+                    {/* Milestone Badges */}
+                    <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                        {[1, 7, 14, 30].map(days => (
+                            <div
+                                key={days}
+                                style={{
+                                    flex: 1,
+                                    padding: '4px 2px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.6rem',
+                                    fontWeight: '700',
+                                    textAlign: 'center',
+                                    backgroundColor: streak >= days ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-hover)',
+                                    color: streak >= days ? '#ef4444' : 'var(--text-muted)',
+                                    border: streak >= days ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
+                                    opacity: streak >= days ? 1 : 0.5,
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                {days >= 30 ? '1M' : `${days}D`}
+                            </div>
+                        ))}
                     </div>
                 </div>
+
                 <div className="card-hover fade-in" style={{ height: '100%', transition: 'all var(--transition-main)' }}>
                     <QuotesSection />
                 </div>
