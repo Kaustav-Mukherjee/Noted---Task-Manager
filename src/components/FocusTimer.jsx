@@ -103,20 +103,20 @@ function FocusTimer({ onTimerComplete }) {
                 ))}
             </div>
 
-            <div style={{ position: 'relative', width: '160px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="160" height="160" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
+            <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="200" height="200" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
                     <circle
                         cx="80" cy="80" r="70"
                         fill="none"
                         stroke="var(--bg-hover)"
-                        strokeWidth="4"
+                        strokeWidth="3"
                         opacity="0.3"
                     />
                     <circle
                         cx="80" cy="80" r="70"
                         fill="none"
                         stroke={MODES[mode].color}
-                        strokeWidth="4"
+                        strokeWidth="3"
                         strokeLinecap="round"
                         strokeDasharray={2 * Math.PI * 70}
                         strokeDashoffset={2 * Math.PI * 70 * (1 - progress / 100)}
@@ -124,18 +124,19 @@ function FocusTimer({ onTimerComplete }) {
                     />
                 </svg>
                 <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '700', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: '3rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
                         {formatTime(timeLeft)}
                     </div>
                 </div>
             </div>
 
+
             <div style={{ display: 'flex', gap: '16px', zIndex: 1, alignItems: 'center' }}>
                 <button
                     onClick={toggleTimer}
                     style={{
-                        width: '56px',
-                        height: '56px',
+                        width: '48px',
+                        height: '48px',
                         borderRadius: '50%',
                         backgroundColor: 'var(--text-main)',
                         color: 'var(--bg-app)',
@@ -146,13 +147,13 @@ function FocusTimer({ onTimerComplete }) {
                         boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
                     }}
                 >
-                    {isActive ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: '4px' }} />}
+                    {isActive ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: '3px' }} />}
                 </button>
                 <button
                     onClick={resetTimer}
                     style={{
-                        width: '40px',
-                        height: '40px',
+                        width: '36px',
+                        height: '36px',
                         borderRadius: '50%',
                         backgroundColor: 'var(--bg-hover)',
                         color: 'var(--text-muted)',
@@ -163,9 +164,10 @@ function FocusTimer({ onTimerComplete }) {
                         transition: 'all var(--transition-fast)'
                     }}
                 >
-                    <RotateCcw size={18} />
+                    <RotateCcw size={16} />
                 </button>
             </div>
+
 
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', opacity: 0.6, letterSpacing: '0.02em' }}>
                 {mode === 'FOCUS' && timeLeft > 0 ? 'Stay focused on your task' : '\u00A0'}
