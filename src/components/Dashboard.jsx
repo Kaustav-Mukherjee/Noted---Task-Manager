@@ -4,8 +4,8 @@ import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, isSameDay, isSameMonth, subDays, subMonths, addMonths } from 'date-fns';
 import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
-import FocusMusic from './FocusMusic';
 import QuotesSection from './QuotesSection';
+
 import { Goal } from 'lucide-react';
 
 
@@ -654,7 +654,6 @@ function Dashboard({
                 onUpdateReminder={onUpdateReminder}
             />
 
-            {/* Sticky Notes Section */}
             <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)' }}>
                 <StickyNotesSection
                     notes={notes}
@@ -666,9 +665,8 @@ function Dashboard({
                     onUpdateFolder={onUpdateFolder}
                     onDeleteFolder={onDeleteFolder}
                 />
-                {/* Focus Music Player */}
-                <FocusMusic />
             </div>
+
 
         </div>
     );
