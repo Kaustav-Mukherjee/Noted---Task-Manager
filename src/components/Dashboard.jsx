@@ -214,28 +214,45 @@ function Dashboard({
                         </div>
                     </div>
 
-                    {/* Milestone Badges */}
-                    <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                        {[1, 7, 14, 30].map(days => (
-                            <div
-                                key={days}
-                                style={{
-                                    flex: 1,
-                                    padding: '4px 2px',
-                                    borderRadius: '6px',
-                                    fontSize: '0.6rem',
-                                    fontWeight: '700',
-                                    textAlign: 'center',
-                                    backgroundColor: streak >= days ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-hover)',
-                                    color: streak >= days ? '#ef4444' : 'var(--text-muted)',
-                                    border: streak >= days ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
-                                    opacity: streak >= days ? 1 : 0.5,
-                                    transition: 'all 0.3s ease'
-                                }}
-                            >
-                                {days >= 30 ? '1M' : `${days}D`}
-                            </div>
-                        ))}
+                    {/* Dynamic Milestone Badges */}
+                    <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px', flexWrap: 'wrap' }}>
+                        {(() => {
+                            const coreMilestones = [
+                                { days: 1, label: '1D' },
+                                { days: 7, label: '7D' },
+                                { days: 14, label: '14D' }
+                            ];
+
+                            // Generate monthly milestones
+                            const monthsCount = Math.max(1, Math.floor(streak / 30) + 1);
+                            const monthlyMilestones = Array.from({ length: monthsCount }, (_, i) => ({
+                                days: (i + 1) * 30,
+                                label: `${i + 1}M`
+                            }));
+
+                            const allMilestones = [...coreMilestones, ...monthlyMilestones];
+
+                            return allMilestones.map(({ days, label }) => (
+                                <div
+                                    key={days}
+                                    style={{
+                                        minWidth: '32px',
+                                        padding: '4px 6px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.6rem',
+                                        fontWeight: '700',
+                                        textAlign: 'center',
+                                        backgroundColor: streak >= days ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-hover)',
+                                        color: streak >= days ? '#ef4444' : 'var(--text-muted)',
+                                        border: streak >= days ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
+                                        opacity: streak >= days ? 1 : 0.5,
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    {label}
+                                </div>
+                            ));
+                        })()}
                     </div>
                 </div>
 
