@@ -42,7 +42,7 @@ A modern, fast, and interactive To-Do application built with React, Vite, and Fi
 ## Deployment
 
 ### Vercel
-This app is deployed on Vercel. You can visit the live site at: **[Coming Soon]**
+This app is deployed on Vercel. You can visit the live site at: (https://noted-task-manager.vercel.app/)
 
 ### GitHub
 The source code is available on GitHub: [https://github.com/Kaustav-Mukherjee/Noted---Task-Manager](https://github.com/Kaustav-Mukherjee/Noted---Task-Manager)
