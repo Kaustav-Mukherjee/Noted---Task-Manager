@@ -14,7 +14,8 @@ const QUOTES = [
 ];
 
 function QuotesSection() {
-    const [quote, setQuote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+    const [fullQuote, setFullQuote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+    const [displayText, setDisplayText] = useState("");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -23,17 +24,18 @@ function QuotesSection() {
                 const response = await fetch('https://script.google.com/macros/s/AKfycbzEVEpiI2vpWMiozQnn0UrUV3BziTZQcYxrhGzcPkbFsuIVtGN3IZ7oERvQx9l5jiI6/exec');
                 const data = await response.json();
 
-                // Handle different possible API structures
+                let newQuote = "";
                 if (typeof data === 'string') {
-                    setQuote(data);
+                    newQuote = data;
                 } else if (data.quote) {
-                    setQuote(data.quote);
+                    newQuote = data.quote;
                 } else if (Array.isArray(data) && data.length > 0) {
-                    setQuote(data[0].quote || data[0]);
+                    newQuote = data[0].quote || data[0];
                 }
+
+                if (newQuote) setFullQuote(newQuote);
             } catch (error) {
                 console.error('Failed to fetch quote:', error);
-                // Fallback already set in initial state
             } finally {
                 setLoading(false);
             }
@@ -42,20 +44,51 @@ function QuotesSection() {
         fetchQuote();
     }, []);
 
+    useEffect(() => {
+        setDisplayText("");
+        let i = 0;
+        const typingInterval = setInterval(() => {
+            if (i < fullQuote.length) {
+                setDisplayText(fullQuote.substring(0, i + 1));
+                i++;
+            } else {
+                clearInterval(typingInterval);
+            }
+        }, 40); // 40ms per character for a smooth but readable speed
+
+        return () => clearInterval(typingInterval);
+    }, [fullQuote]);
+
     return (
-        <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+        <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)', minHeight: '80px' }}>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Daily Spark</div>
-            <div className="fade-in" style={{
+            <div style={{
                 fontSize: '0.9rem',
                 fontWeight: '500',
                 fontStyle: 'italic',
                 lineHeight: '1.4',
                 color: 'var(--text-main)',
-                opacity: loading ? 0.5 : 1,
-                transition: 'opacity 0.5s ease'
+                opacity: loading && !displayText ? 0.5 : 1,
             }}>
-                "{quote}"
+                "{displayText}
+                <span style={{
+                    display: displayText.length < fullQuote.length ? 'inline-block' : 'none',
+                    width: '2px',
+                    height: '1em',
+                    backgroundColor: 'var(--accent)',
+                    marginLeft: '2px',
+                    verticalAlign: 'middle',
+                    animation: 'blink 1s step-end infinite'
+                }} />"
             </div>
+            <style>
+                {`
+                @keyframes blink {
+                    from, to { opacity: 1; }
+                    50% { opacity: 0; }
+                }
+                `}
+            </style>
         </div>
     );
 }
