@@ -215,7 +215,17 @@ function Dashboard({
                     </div>
 
                     {/* Dynamic Milestone Badges */}
-                    <div style={{ display: 'flex', gap: '10px', borderTop: '1px solid var(--border)', paddingTop: '16px', flexWrap: 'wrap' }}>
+                    <div style={{
+                        display: 'flex',
+                        gap: '8px',
+                        borderTop: '1px solid var(--border)',
+                        paddingTop: '16px',
+                        flexWrap: 'nowrap',
+                        overflowX: 'auto',
+                        paddingBottom: '4px',
+                        msOverflowStyle: 'none',
+                        scrollbarWidth: 'none'
+                    }}>
                         {(() => {
                             const coreMilestones = [
                                 { days: 1, label: '1D' },
