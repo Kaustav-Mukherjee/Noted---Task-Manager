@@ -67,15 +67,21 @@ function YouTubeNowPlaying() {
                 </button>
             </div>
 
-            {showInput && (
+            <div style={{
+                maxHeight: showInput ? '100px' : '0',
+                opacity: showInput ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'all 0.5s var(--ease-apple)',
+                pointerEvents: showInput ? 'auto' : 'none',
+                marginTop: showInput ? '4px' : '0',
+                marginBottom: showInput ? '4px' : '0'
+            }}>
                 <form
-                    className="fade-in"
                     onSubmit={handleUpdateVideo}
                     style={{
                         display: 'flex',
                         gap: '8px',
-                        animation: 'fadeInSlideUp 0.3s var(--ease-apple)',
-                        transition: 'all var(--transition-main)'
+                        padding: '4px 0'
                     }}
                 >
                     <input
@@ -88,7 +94,7 @@ function YouTubeNowPlaying() {
                             backgroundColor: 'var(--bg-hover)',
                             border: '1px solid var(--border)',
                             borderRadius: '10px',
-                            padding: '8px 12px',
+                            padding: '10px 14px',
                             fontSize: '0.75rem',
                             color: 'var(--text-main)',
                             outline: 'none',
@@ -99,8 +105,7 @@ function YouTubeNowPlaying() {
                         Set
                     </button>
                 </form>
-            )}
-
+            </div>
 
             <div style={{
                 width: '100%',
@@ -109,7 +114,8 @@ function YouTubeNowPlaying() {
                 overflow: 'hidden',
                 backgroundColor: '#000',
                 border: '1px solid var(--border)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                transition: 'transform var(--transition-main)'
             }}>
                 <iframe
                     width="100%"
