@@ -113,12 +113,11 @@ function FocusTimer({ onTimerComplete }) {
     };
 
     return (
-        <div style={{
+        <div className="card-hover" style={{
             padding: '24px',
             backgroundColor: 'var(--bg-card)',
             borderRadius: 'var(--radius)',
             border: '1px solid var(--border)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -129,6 +128,7 @@ function FocusTimer({ onTimerComplete }) {
             flex: 1,
             transition: 'all var(--transition-main)'
         }}>
+
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
