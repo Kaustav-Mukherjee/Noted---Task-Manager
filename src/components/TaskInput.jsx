@@ -14,13 +14,16 @@ function TaskInput({ onAdd }) {
     return (
         <form
             onSubmit={handleSubmit}
+            className="card-hover fade-in"
             style={{
                 display: 'flex',
                 alignItems: 'center',
                 backgroundColor: 'var(--bg-card)',
                 padding: '16px 20px',
                 borderRadius: 'var(--radius)',
-                gap: '12px'
+                gap: '12px',
+                border: '1px solid var(--border)',
+                transition: 'all var(--transition-main)'
             }}
         >
             <Plus size={20} color="var(--text-muted)" />

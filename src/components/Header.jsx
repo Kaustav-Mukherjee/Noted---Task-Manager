@@ -18,10 +18,11 @@ function Header({ theme, toggleTheme, user, onSignInClick }) {
     return (
         <div className="header-container">
             <div className="brand-section">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                <div className="card-hover" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px', cursor: 'pointer', transition: 'all var(--transition-main)' }}>
                     <CheckSquare size={32} strokeWidth={2.5} />
                     <h1 style={{ fontWeight: '700', letterSpacing: '-0.03em' }}>Noted</h1>
                 </div>
+
                 <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>{dateString}</p>
             </div>
 
@@ -68,8 +69,9 @@ function Header({ theme, toggleTheme, user, onSignInClick }) {
                             color: 'var(--bg-app)',
                             fontWeight: '600',
                             fontSize: '0.85rem',
-                            transition: 'transform 0.2s, opacity 0.2s'
+                            transition: 'all var(--transition-main)'
                         }}
+
                     >
                         Sign In
                     </button>
@@ -81,8 +83,12 @@ function Header({ theme, toggleTheme, user, onSignInClick }) {
                         padding: '8px',
                         color: 'var(--text-muted)',
                         borderRadius: '50%',
-                        transition: 'background-color 0.2s'
+                        transition: 'all var(--transition-fast)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}
+
                 >
                     {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
                 </button>

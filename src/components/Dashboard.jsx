@@ -203,7 +203,7 @@ function Dashboard({
 
             {/* Top Row: Streak & Quotes */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
-                <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid var(--border)' }}>
+                <div className="card-hover" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
                     </div>
@@ -212,11 +212,15 @@ function Dashboard({
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Day Streak</div>
                     </div>
                 </div>
-                <QuotesSection />
+                <div className="card-hover fade-in" style={{ height: '100%', transition: 'all var(--transition-main)' }}>
+                    <QuotesSection />
+                </div>
+
             </div>
 
             {/* Task Activity Card */}
-            <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)' }}>
+            <div className="card-hover fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Task Activity</h3>
@@ -269,7 +273,8 @@ function Dashboard({
             </div>
 
             {/* Study Hours Card with Time Range Toggle */}
-            <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)' }}>
+            <div className="card-hover fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <BookOpen size={16} />
@@ -349,9 +354,10 @@ function Dashboard({
                             height: '100%',
                             backgroundColor: 'var(--text-main)',
                             borderRadius: '3px',
-                            transition: 'width 0.5s ease'
+                            transition: 'width 0.8s var(--ease-apple)'
                         }}></div>
                     </div>
+
                 </div>
 
                 {/* Goal Setting Modal */}

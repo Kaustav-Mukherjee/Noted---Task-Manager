@@ -27,7 +27,7 @@ function YouTubeNowPlaying() {
     };
 
     return (
-        <div style={{
+        <div className="card-hover fade-in" style={{
             padding: '16px',
             backgroundColor: 'var(--bg-card)',
             borderRadius: 'var(--radius)',
@@ -36,8 +36,10 @@ function YouTubeNowPlaying() {
             flexDirection: 'column',
             justifyContent: 'space-between',
             gap: '12px',
-            height: '100%'
+            height: '100%',
+            transition: 'all var(--transition-main)'
         }}>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#ff000022', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

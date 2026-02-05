@@ -51,7 +51,8 @@ function FocusMusic() {
     };
 
     return (
-        <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '14px', border: '1px solid var(--border)', position: 'relative' }}>
+        <div className="card-hover fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '14px', border: '1px solid var(--border)', position: 'relative', transition: 'all var(--transition-main)' }}>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                     width: '44px',
@@ -93,11 +94,12 @@ function FocusMusic() {
                         borderRadius: '10px',
                         backgroundColor: showLibrary ? 'var(--text-main)' : 'var(--bg-hover)',
                         color: showLibrary ? 'var(--bg-app)' : 'var(--text-main)',
-                        transition: 'all 0.2s',
+                        transition: 'all var(--transition-main)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}
+
                 >
                     {showLibrary ? <X size={18} /> : <ListMusic size={18} />}
                 </button>
@@ -117,8 +119,11 @@ function FocusMusic() {
                     zIndex: 100,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
                     padding: '8px',
-                    scrollbarWidth: 'none'
+                    scrollbarWidth: 'none',
+                    transition: 'all var(--transition-main)',
+                    animation: 'fadeInSlideUp 0.4s var(--ease-apple)'
                 }}>
+
                     {TRACKS.map((track, i) => (
                         <div
                             key={i}

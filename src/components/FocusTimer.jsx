@@ -94,7 +94,7 @@ function FocusTimer({ onTimerComplete }) {
                             fontWeight: '750',
                             backgroundColor: mode === k ? MODES[k].color : 'transparent',
                             color: mode === k ? 'var(--bg-app)' : 'var(--text-muted)',
-                            transition: 'all 0.3s ease',
+                            transition: 'all var(--transition-main)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.04em'
                         }}

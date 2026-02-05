@@ -46,20 +46,28 @@ function AuthModal({ isOpen, onClose }) {
         <div style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            backdropFilter: 'blur(4px)'
+            transition: 'all var(--transition-main)'
         }}>
-            <div style={{
+            <div className="fade-in" style={{
                 backgroundColor: 'var(--bg-card)',
-                borderRadius: '20px',
-                padding: '32px',
-                width: '100%',
-                maxWidth: '400px',
-                position: 'relative'
+                width: '90%',
+                maxWidth: '420px',
+                borderRadius: '32px',
+                padding: '40px',
+                border: '1px solid var(--border)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '24px',
+                transition: 'transform var(--transition-main)',
+                position: 'relative' // Kept this as it's needed for the X button's absolute positioning
             }}>
                 <button
                     onClick={onClose}

@@ -121,15 +121,16 @@ function TaskItem({ task, onToggle, onDelete }) {
         <div
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            className="card-hover fade-in"
             style={{
                 display: 'flex',
                 alignItems: 'center',
                 padding: '16px 20px',
                 backgroundColor: 'var(--bg-card)',
                 borderRadius: 'var(--radius)',
-                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                transition: 'all var(--transition-main)',
                 cursor: 'pointer',
-                transform: isHovered ? 'scale(1.01)' : 'scale(1)',
+                border: '1px solid var(--border)'
             }}
         >
             <button
@@ -140,7 +141,8 @@ function TaskItem({ task, onToggle, onDelete }) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: task.completed ? 'var(--text-main)' : 'var(--text-muted)',
-                    transition: 'color 0.2s'
+                    transition: 'all var(--transition-main)',
+                    transform: task.completed ? 'scale(1.1)' : 'scale(1)'
                 }}
             >
                 {task.completed ? (
@@ -151,24 +153,29 @@ function TaskItem({ task, onToggle, onDelete }) {
                         backgroundColor: 'var(--text-main)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        animation: 'fadeInSlideUp 0.3s var(--ease-apple-out)'
                     }}>
                         <Check size={14} color="var(--bg-app)" strokeWidth={3} />
                     </div>
                 ) : (
-                    <Circle size={24} strokeWidth={1.5} />
+                    <Circle size={24} strokeWidth={1.5} style={{ transition: 'all var(--transition-fast)' }} />
                 )}
             </button>
+
 
             <span style={{
                 flex: 1,
                 fontSize: '1rem',
                 color: task.completed ? 'var(--text-muted)' : 'var(--text-main)',
                 textDecoration: task.completed ? 'line-through' : 'none',
-                transition: 'color 0.2s'
+                opacity: task.completed ? 0.6 : 1,
+                transition: 'all var(--transition-main)',
+                transform: task.completed ? 'translateX(4px)' : 'translateX(0)'
             }}>
                 {task.text}
             </span>
+
 
             {isHovered && (
                 <button

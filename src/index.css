@@ -16,6 +16,15 @@
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
+
+    /* Apple-level Animation Easing */
+    --ease-apple: cubic-bezier(0.28, 0.11, 0.32, 1);
+    --ease-apple-out: cubic-bezier(0.12, 0.4, 0.29, 1.46);
+    --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+    --transition-fast: 200ms var(--ease-apple);
+    --transition-main: 400ms var(--ease-apple);
+    --transition-slow: 600ms var(--ease-apple);
 }
 
 [data-theme="light"] {
@@ -42,9 +51,10 @@ body {
     color: var(--text-main);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color var(--transition-main), color var(--transition-main);
     min-height: 100vh;
 }
+
 
 #root {
     width: 100%;
@@ -60,7 +70,18 @@ button {
     background: none;
     font-family: inherit;
     color: inherit;
+    transition: transform var(--transition-fast), filter var(--transition-fast), opacity var(--transition-fast), background-color var(--transition-fast);
 }
+
+button:active {
+    transform: scale(0.96);
+    opacity: 0.8;
+}
+
+button:hover {
+    filter: brightness(1.1);
+}
+
 
 input,
 textarea {
@@ -69,23 +90,36 @@ textarea {
     font-family: inherit;
     color: inherit;
     outline: none;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-@keyframes fadeIn {
+
+@keyframes fadeInSlideUp {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(20px) scale(0.98);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
 .fade-in {
-    animation: fadeIn 0.4s ease-out forwards;
+    animation: fadeInSlideUp 0.6s var(--ease-apple) forwards;
 }
+
+.card-hover {
+    transition: transform var(--transition-main), box-shadow var(--transition-main), border-color var(--transition-main);
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
 
 /* Responsive Layout Classes */
 .app-container {
