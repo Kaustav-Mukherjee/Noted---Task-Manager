@@ -351,36 +351,6 @@ function StickyNotesSection({
                 </div>
             )}
         </div>
-
-            {
-        editingFolderId && (
-            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-                <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '20px', width: '90%', maxWidth: '300px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <h4 style={{ fontWeight: '700' }}>{editingFolderId === 'new' ? 'New Folder' : 'Rename Folder'}</h4>
-                        <button onClick={() => setEditingFolderId(null)}><X size={20} /></button>
-                    </div>
-                    <input
-                        placeholder="Folder name..."
-                        value={tempFolderName}
-                        onChange={(e) => setTempFolderName(e.target.value)}
-                        style={{ width: '100%', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', background: 'var(--bg-app)', color: 'var(--text-main)' }}
-                        autoFocus
-                    />
-                    <button
-                        onClick={() => {
-                            if (editingFolderId === 'new') handleCreateFolder();
-                            else { onUpdateFolder(editingFolderId, { name: tempFolderName }); setEditingFolderId(null); }
-                        }}
-                        style={{ padding: '12px', backgroundColor: 'var(--text-main)', color: 'var(--bg-app)', borderRadius: '12px', fontWeight: '600' }}
-                    >
-                        {editingFolderId === 'new' ? 'Create Folder' : 'Save Header'}
-                    </button>
-                </div>
-            </div>
-        )
-    }
-        </div >
     );
 }
 
