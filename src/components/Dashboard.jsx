@@ -855,11 +855,6 @@ function Dashboard({
                                 const d = new Date(r.dueDate);
                                 return !isNaN(d.getTime()) && isSameDay(d, day);
                             });
-                            const hasGoogleEvent = googleEvents.some(e => {
-                                if (!e.start || (!e.start.dateTime && !e.start.date)) return false;
-                                const eventStart = new Date(e.start.dateTime || e.start.date);
-                                return !isNaN(eventStart.getTime()) && isSameDay(eventStart, day);
-                            });
 
                             return (
                                 <div
@@ -884,9 +879,6 @@ function Dashboard({
                                     {format(day, 'd')}
                                     {hasActivity && !isToday && (
                                         <div style={{ position: 'absolute', bottom: '2px', width: '3px', height: '3px', borderRadius: '50%', backgroundColor: 'var(--text-main)' }}></div>
-                                    )}
-                                    {hasGoogleEvent && !isToday && (
-                                        <div style={{ position: 'absolute', bottom: '2px', right: '35%', width: '3px', height: '3px', borderRadius: '50%', backgroundColor: '#4285F4' }}></div>
                                     )}
                                 </div>
                             );
@@ -952,26 +944,6 @@ function Dashboard({
                                         )}
                                     </div>
 
-                                    {/* Google Events Section */}
-                                    {selectedDateData.googleEvents && selectedDateData.googleEvents.length > 0 && (
-                                        <div>
-                                            <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <CalendarIcon size={12} color="#4285F4" /> Google Calendar
-                                            </h5>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                {selectedDateData.googleEvents.map(e => (
-                                                    <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', borderLeft: '3px solid #4285F4' }}>
-                                                        <div style={{ flex: 1 }}>
-                                                            <div style={{ fontWeight: '500' }}>{e.summary}</div>
-                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                                                                {e.start?.dateTime ? safeFormat(e.start.dateTime, 'p') : 'All Day'}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
 
                                     {/* Add Retroactive Data Form */}
                                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '8px' }}>
