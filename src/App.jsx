@@ -283,6 +283,11 @@ function App() {
         if (todayStudyHours >= dailyGoalHours && !goalCompleted) {
             setGoalCompleted(true);
             setShowGoalCelebration(true);
+            // Auto-hide after 3 seconds
+            const timer = setTimeout(() => {
+                setShowGoalCelebration(false);
+            }, 3000);
+            return () => clearTimeout(timer);
         } else if (todayStudyHours < dailyGoalHours && goalCompleted) {
             setGoalCompleted(false);
             setShowGoalCelebration(false);
@@ -330,7 +335,7 @@ function App() {
 
     return (
         <>
-            {/* Goal Completion Edge Lighting Effect */}
+            {/* Goal Completion Edge Lighting Effect - Subtle 3-second animation */}
             {showGoalCelebration && (
                 <div style={{
                     position: 'fixed',
@@ -342,135 +347,109 @@ function App() {
                     zIndex: 9999,
                     overflow: 'hidden'
                 }}>
-                    {/* Animated gradient border */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '-10px',
-                        left: '-10px',
-                        right: '-10px',
-                        bottom: '-10px',
-                        background: 'linear-gradient(45deg, #ff0080, #ff8c00, #40e0d0, #ff0080)',
-                        backgroundSize: '400% 400%',
-                        animation: 'gradientRotate 3s ease infinite',
-                        opacity: 0.8,
-                        filter: 'blur(20px)'
-                    }} />
-                    {/* Inner glow */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '5px',
-                        left: '5px',
-                        right: '5px',
-                        bottom: '5px',
-                        border: '3px solid transparent',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(45deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf)',
-                        backgroundSize: '400% 400%',
-                        animation: 'gradientRotate 3s ease infinite',
-                        opacity: 0.6,
-                        WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
-                        WebkitMaskComposite: 'xor',
-                        maskComposite: 'exclude'
-                    }} />
-                    {/* Corner sparkles */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '20px',
-                        left: '20px',
-                        width: '60px',
-                        height: '60px',
-                        background: 'radial-gradient(circle, rgba(255,0,128,0.8) 0%, transparent 70%)',
-                        animation: 'pulse 1.5s ease-in-out infinite',
-                        borderRadius: '50%'
-                    }} />
-                    <div style={{
-                        position: 'absolute',
-                        top: '20px',
-                        right: '20px',
-                        width: '60px',
-                        height: '60px',
-                        background: 'radial-gradient(circle, rgba(255,140,0,0.8) 0%, transparent 70%)',
-                        animation: 'pulse 1.5s ease-in-out infinite 0.5s',
-                        borderRadius: '50%'
-                    }} />
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '20px',
-                        left: '20px',
-                        width: '60px',
-                        height: '60px',
-                        background: 'radial-gradient(circle, rgba(64,224,208,0.8) 0%, transparent 70%)',
-                        animation: 'pulse 1.5s ease-in-out infinite 1s',
-                        borderRadius: '50%'
-                    }} />
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '20px',
-                        right: '20px',
-                        width: '60px',
-                        height: '60px',
-                        background: 'radial-gradient(circle, rgba(123,44,191,0.8) 0%, transparent 70%)',
-                        animation: 'pulse 1.5s ease-in-out infinite 1.5s',
-                        borderRadius: '50%'
-                    }} />
-                    {/* Top edge line */}
+                    {/* Top edge glow */}
                     <div style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         right: 0,
-                        height: '4px',
-                        background: 'linear-gradient(90deg, transparent, #ff0080, #ff8c00, #40e0d0, transparent)',
-                        animation: 'shimmer 2s linear infinite'
+                        height: '3px',
+                        background: 'linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
+                        backgroundSize: '500% 100%',
+                        animation: 'edgeFlow 2s ease infinite',
+                        boxShadow: '0 0 15px rgba(255,0,128,0.6), 0 0 30px rgba(255,140,0,0.4)',
+                        opacity: 0.9
                     }} />
-                    {/* Bottom edge line */}
+                    {/* Bottom edge glow */}
                     <div style={{
                         position: 'absolute',
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        height: '4px',
-                        background: 'linear-gradient(90deg, transparent, #40e0d0, #ff8c00, #ff0080, transparent)',
-                        animation: 'shimmer 2s linear infinite reverse'
+                        height: '3px',
+                        background: 'linear-gradient(270deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
+                        backgroundSize: '500% 100%',
+                        animation: 'edgeFlow 2s ease infinite reverse',
+                        boxShadow: '0 0 15px rgba(123,44,191,0.6), 0 0 30px rgba(64,224,208,0.4)',
+                        opacity: 0.9
                     }} />
-                    {/* Left edge line */}
+                    {/* Left edge glow */}
                     <div style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         bottom: 0,
-                        width: '4px',
-                        background: 'linear-gradient(180deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf)',
-                        animation: 'glowPulse 2s ease-in-out infinite'
+                        width: '3px',
+                        background: 'linear-gradient(180deg, #ff0080, #40e0d0, #7b2cbf, #ff8c00, #ff0080)',
+                        backgroundSize: '100% 500%',
+                        animation: 'edgeFlowVertical 2s ease infinite',
+                        boxShadow: '0 0 15px rgba(255,0,128,0.6), 0 0 30px rgba(64,224,208,0.4)',
+                        opacity: 0.9
                     }} />
-                    {/* Right edge line */}
+                    {/* Right edge glow */}
                     <div style={{
                         position: 'absolute',
                         top: 0,
                         right: 0,
                         bottom: 0,
-                        width: '4px',
-                        background: 'linear-gradient(180deg, #7b2cbf, #40e0d0, #ff8c00, #ff0080)',
-                        animation: 'glowPulse 2s ease-in-out infinite reverse'
+                        width: '3px',
+                        background: 'linear-gradient(0deg, #ff0080, #40e0d0, #7b2cbf, #ff8c00, #ff0080)',
+                        backgroundSize: '100% 500%',
+                        animation: 'edgeFlowVertical 2s ease infinite reverse',
+                        boxShadow: '0 0 15px rgba(255,140,0,0.6), 0 0 30px rgba(123,44,191,0.4)',
+                        opacity: 0.9
+                    }} />
+                    {/* Corner accents */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '40px',
+                        height: '40px',
+                        borderTop: '2px solid rgba(255,0,128,0.8)',
+                        borderLeft: '2px solid rgba(255,0,128,0.8)',
+                        borderTopLeftRadius: '8px'
+                    }} />
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: '40px',
+                        height: '40px',
+                        borderTop: '2px solid rgba(255,140,0,0.8)',
+                        borderRight: '2px solid rgba(255,140,0,0.8)',
+                        borderTopRightRadius: '8px'
+                    }} />
+                    <div style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        width: '40px',
+                        height: '40px',
+                        borderBottom: '2px solid rgba(64,224,208,0.8)',
+                        borderLeft: '2px solid rgba(64,224,208,0.8)',
+                        borderBottomLeftRadius: '8px'
+                    }} />
+                    <div style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        right: 0,
+                        width: '40px',
+                        height: '40px',
+                        borderBottom: '2px solid rgba(123,44,191,0.8)',
+                        borderRight: '2px solid rgba(123,44,191,0.8)',
+                        borderBottomRightRadius: '8px'
                     }} />
                     <style>{`
-                        @keyframes gradientRotate {
+                        @keyframes edgeFlow {
                             0% { background-position: 0% 50%; }
                             50% { background-position: 100% 50%; }
                             100% { background-position: 0% 50%; }
                         }
-                        @keyframes pulse {
-                            0%, 100% { transform: scale(1); opacity: 0.8; }
-                            50% { transform: scale(1.2); opacity: 1; }
-                        }
-                        @keyframes shimmer {
-                            0% { opacity: 0.5; }
-                            50% { opacity: 1; }
-                            100% { opacity: 0.5; }
-                        }
-                        @keyframes glowPulse {
-                            0%, 100% { box-shadow: 0 0 10px rgba(255,0,128,0.5); }
-                            50% { box-shadow: 0 0 30px rgba(255,0,128,1); }
+                        @keyframes edgeFlowVertical {
+                            0% { background-position: 50% 0%; }
+                            50% { background-position: 50% 100%; }
+                            100% { background-position: 50% 0%; }
                         }
                     `}</style>
                 </div>
