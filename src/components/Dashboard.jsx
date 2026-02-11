@@ -428,7 +428,8 @@ function Dashboard({
     );
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
+        <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
 
             {/* Top Row: Streak & Quotes */}
             <div className="dashboard-stats-grid">
@@ -825,39 +826,6 @@ function Dashboard({
                     </ResponsiveContainer>
                 </div>
 
-                {/* Study Management Modal */}
-                {showStudyModal && (
-                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-                        <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '20px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h4 style={{ fontWeight: '700' }}>Manage Study Sessions</h4>
-                                <button onClick={() => setShowStudyModal(false)}><X size={20} /></button>
-                            </div>
-                            <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {studySessions.map(session => (
-                                    <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: 'var(--bg-input)', borderRadius: '10px' }}>
-                                        <div>
-                                            <div style={{ fontSize: '0.8rem', fontWeight: '600' }}>{session.hours} Hours</div>
-                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{format(new Date(session.date), 'MMM d, p')}</div>
-                                        </div>
-                                        <button onClick={() => onDeleteStudySession(session.id)} style={{ color: '#ef4444', padding: '4px' }}>
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                                {studySessions.length === 0 && (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No sessions found.</div>
-                                )}
-                            </div>
-                            <button
-                                onClick={() => { if (window.confirm('Reset all sessions?')) studySessions.forEach(s => onDeleteStudySession(s.id)) }}
-                                style={{ padding: '12px', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600' }}
-                            >
-                                Reset All Data
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* Calendar Card - Interactive & Minimizable */}
@@ -1172,7 +1140,65 @@ function Dashboard({
             }}>
                 Noted v1.0.1
             </div>
-        </div >
+        </div>
+
+        {/* Study Management Modal - Rendered outside main container to avoid overflow clipping */}
+        {showStudyModal && (
+            <div style={{ 
+                position: 'fixed', 
+                inset: 0, 
+                backgroundColor: 'rgba(0,0,0,0.6)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                zIndex: 9999 
+            }}>
+                <div style={{ 
+                    backgroundColor: 'var(--bg-card)', 
+                    padding: '24px', 
+                    borderRadius: '20px', 
+                    width: '90%', 
+                    maxWidth: '400px', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '16px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ fontWeight: '700' }}>Manage Study Sessions</h4>
+                        <button 
+                            onClick={() => setShowStudyModal(false)}
+                            style={{ padding: '4px', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {studySessions.map(session => (
+                            <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: 'var(--bg-input)', borderRadius: '10px' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: '600' }}>{session.hours} Hours</div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{format(new Date(session.date), 'MMM d, p')}</div>
+                                </div>
+                                <button onClick={() => onDeleteStudySession(session.id)} style={{ color: '#ef4444', padding: '4px', cursor: 'pointer' }}>
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        ))}
+                        {studySessions.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No sessions found.</div>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => { if (window.confirm('Reset all sessions?')) studySessions.forEach(s => onDeleteStudySession(s.id)) }}
+                        style={{ padding: '12px', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                        Reset All Data
+                    </button>
+                </div>
+            </div>
+        )}
+        </>
     );
 }
 
