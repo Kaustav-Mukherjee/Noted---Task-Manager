@@ -7,8 +7,9 @@ A modern, fast, and interactive To-Do application built with React, Vite, and Fi
 - **Dynamic Task Management**: Add, delete, and organize tasks effortlessly.
 - **Focus Music**: Integrated music player to help you stay in the flow.
 - **Sticky Notes**: Quick notes for random thoughts and reminders.
-- **Modern UI**: Sleek design with smooth animations and responsive layout.
-- **Analytics**: Visual representation of your task progress using Recharts.
+- **Advanced Calendar & Retroactive Tracking**: View historical tasks, reminders, and study sessions. Add or delete data for any past date with ease.
+- **Modern UI**: Sleek design with smooth animations, collapsible sections, and responsive layout.
+- **Analytics**: Visual representation of your study streaks and task progress using Recharts.
 
 ## Tech Stack
 

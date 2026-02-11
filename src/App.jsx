@@ -364,6 +364,7 @@ function App() {
                         updateGoal={updateGoal}
                         onAddTask={addTask}
                         onDeleteTask={deleteTask}
+                        onToggleTask={toggleTask}
                     />
 
                 </div>
