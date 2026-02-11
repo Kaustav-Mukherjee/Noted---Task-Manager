@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
-import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown } from 'lucide-react';
+import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown, Calendar as CalendarIcon, RefreshCw, Link } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, isSameDay, isSameMonth, subDays, subMonths, addMonths } from 'date-fns';
 import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
 import QuotesSection from './QuotesSection';
+import { useAuth } from '../contexts/AuthContext';
+import { getCalendarEvents } from '../services/googleCalendarService';
 
 import { Goal } from 'lucide-react';
 
@@ -30,12 +32,22 @@ function Dashboard({
     const [showNavPopover, setShowNavPopover] = useState(false);
     const [isCalendarMinimized, setIsCalendarMinimized] = useState(false);
 
+    // Google Calendar State
+    const [googleEvents, setGoogleEvents] = useState([]);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [googleToken, setGoogleToken] = useState(null);
+    const { signInWithGoogle, user } = useAuth();
+
     const today = new Date();
 
     const handleDateClick = (date) => {
         const dateTasks = tasks.filter(t => isSameDay(new Date(t.date), date));
         const dateReminders = reminders.filter(r => r.dueDate && isSameDay(new Date(r.dueDate), date));
-        setSelectedDateData({ date, tasks: dateTasks, reminders: dateReminders });
+        const dateGoogleEvents = googleEvents.filter(e => {
+            const eventStart = new Date(e.start.dateTime || e.start.date);
+            return isSameDay(eventStart, date);
+        });
+        setSelectedDateData({ date, tasks: dateTasks, reminders: dateReminders, googleEvents: dateGoogleEvents });
         setShowDateModal(true);
     };
 
@@ -146,6 +158,40 @@ function Dashboard({
     }, [studySessions, today]);
 
     const goalProgress = Math.min(100, (todayStudyHours / dailyGoalHours) * 100);
+
+    // Fetch Google Calendar Events
+    const fetchGoogleEvents = async (token) => {
+        if (!token) return;
+        setIsSyncing(true);
+        try {
+            const start = startOfMonth(subMonths(currentMonth, 1));
+            const end = endOfMonth(addMonths(currentMonth, 1));
+            const events = await getCalendarEvents(token, start, end);
+            setGoogleEvents(events);
+        } catch (error) {
+            console.error("Failed to sync calendar", error);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const handleSyncClick = async () => {
+        if (googleToken) {
+            fetchGoogleEvents(googleToken);
+        } else {
+            const result = await signInWithGoogle();
+            if (result.token) {
+                setGoogleToken(result.token);
+                fetchGoogleEvents(result.token);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (googleToken) {
+            fetchGoogleEvents(googleToken);
+        }
+    }, [currentMonth, googleToken]);
 
 
     // Calendar logic based on current month
@@ -556,12 +602,24 @@ function Dashboard({
                     </div>
 
                     <button
+                        onClick={handleSyncClick}
+                        disabled={isSyncing}
+                        style={{ padding: '4px', borderRadius: '6px', color: isSyncing ? 'var(--text-main)' : 'var(--text-muted)', marginRight: '4px' }}
+                        title={googleToken ? "Refresh Calendar" : "Sync Google Calendar"}
+                    >
+                        {isSyncing ? <RefreshCw size={16} className="spin" /> : googleToken ? <RefreshCw size={16} /> : <Link size={16} />}
+                    </button>
+                    <button
                         onClick={() => setIsCalendarMinimized(!isCalendarMinimized)}
                         style={{ padding: '4px', borderRadius: '6px', color: 'var(--text-muted)' }}
                     >
                         {isCalendarMinimized ? <ChevronDown size={18} /> : <X size={18} style={{ transform: 'rotate(45deg)' }} />}
                     </button>
                 </div>
+                <style>{`
+                    .spin { animation: spin 1s linear infinite; }
+                    @keyframes spin { 100% { transform: rotate(360deg); } }
+                `}</style>
 
                 {/* Navigation Popover */}
                 {showNavPopover && (
@@ -620,6 +678,10 @@ function Dashboard({
                             const isToday = isSameDay(day, today);
                             const isCurrentMonth = isSameMonth(day, currentMonth);
                             const hasActivity = tasks.some(t => isSameDay(new Date(t.date), day)) || reminders.some(r => r.dueDate && isSameDay(new Date(r.dueDate), day));
+                            const hasGoogleEvent = googleEvents.some(e => {
+                                const eventStart = new Date(e.start.dateTime || e.start.date);
+                                return isSameDay(eventStart, day);
+                            });
 
                             return (
                                 <div
@@ -644,6 +706,9 @@ function Dashboard({
                                     {format(day, 'd')}
                                     {hasActivity && !isToday && (
                                         <div style={{ position: 'absolute', bottom: '2px', width: '3px', height: '3px', borderRadius: '50%', backgroundColor: 'var(--text-main)' }}></div>
+                                    )}
+                                    {hasGoogleEvent && !isToday && (
+                                        <div style={{ position: 'absolute', bottom: '2px', right: '35%', width: '3px', height: '3px', borderRadius: '50%', backgroundColor: '#4285F4' }}></div>
                                     )}
                                 </div>
                             );
@@ -692,7 +757,25 @@ function Dashboard({
                                 </div>
                             )}
 
-                            {selectedDateData.tasks.length === 0 && selectedDateData.reminders.length === 0 && (
+                            {selectedDateData.googleEvents && selectedDateData.googleEvents.length > 0 && (
+                                <div>
+                                    <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <CalendarIcon size={12} /> Google Calendar
+                                    </h5>
+                                    {selectedDateData.googleEvents.map(e => (
+                                        <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '4px', borderLeft: '3px solid #4285F4' }}>
+                                            <div>
+                                                <div style={{ fontWeight: '500' }}>{e.summary}</div>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                                    {e.start.dateTime ? format(new Date(e.start.dateTime), 'p') : 'All Day'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {selectedDateData.tasks.length === 0 && selectedDateData.reminders.length === 0 && (!selectedDateData.googleEvents || selectedDateData.googleEvents.length === 0) && (
                                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No plans for this day.</div>
                             )}
                         </div>

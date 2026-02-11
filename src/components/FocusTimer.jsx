@@ -15,27 +15,85 @@ function FocusTimer({ onTimerComplete }) {
     const [isActive, setIsActive] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const timerRef = useRef(null);
+    const startTimeRef = useRef(null);
+    const elapsedRef = useRef(0);
+
+    // Load saved state on mount
+    useEffect(() => {
+        const savedState = localStorage.getItem('focusTimerState');
+        if (savedState) {
+            const state = JSON.parse(savedState);
+            setMode(state.mode || 'FOCUS');
+            setIsTimerMode(state.isTimerMode !== false);
+            setTimeLeft(state.timeLeft || MODES.FOCUS.minutes * 60);
+            setUseSeconds(state.useSeconds || 0);
+            setIsActive(state.isActive || false);
+            
+            if (state.isActive && state.startTime) {
+                const elapsedSinceStart = Math.floor((Date.now() - state.startTime) / 1000);
+                if (state.isTimerMode) {
+                    const newTimeLeft = state.timeLeft - elapsedSinceStart;
+                    if (newTimeLeft > 0) {
+                        setTimeLeft(newTimeLeft);
+                        startTimeRef.current = state.startTime;
+                        elapsedRef.current = elapsedSinceStart;
+                    } else {
+                        setTimeLeft(0);
+                        setIsActive(false);
+                    }
+                } else {
+                    setUseSeconds(state.useSeconds + elapsedSinceStart);
+                    startTimeRef.current = state.startTime;
+                    elapsedRef.current = elapsedSinceStart;
+                }
+            }
+        }
+    }, []);
+
+    // Save state to localStorage whenever it changes
+    useEffect(() => {
+        const stateToSave = {
+            mode,
+            isTimerMode,
+            timeLeft,
+            useSeconds,
+            isActive,
+            startTime: isActive ? (startTimeRef.current || Date.now()) : null
+        };
+        localStorage.setItem('focusTimerState', JSON.stringify(stateToSave));
+    }, [mode, isTimerMode, timeLeft, useSeconds, isActive]);
 
     useEffect(() => {
         if (isActive) {
+            clearInterval(timerRef.current);
+            if (!startTimeRef.current) {
+                startTimeRef.current = Date.now();
+                elapsedRef.current = 0;
+            }
+            
             timerRef.current = setInterval(() => {
+                const totalElapsed = elapsedRef.current + Math.floor((Date.now() - startTimeRef.current) / 1000);
+                
                 if (isTimerMode) {
-                    setTimeLeft(prev => {
-                        if (prev <= 1) {
-                            handleComplete();
-                            return 0;
-                        }
-                        return prev - 1;
-                    });
+                    const newTimeLeft = Math.max(0, (MODES[mode].minutes * 60) - totalElapsed);
+                    setTimeLeft(newTimeLeft);
+                    
+                    if (newTimeLeft === 0) {
+                        handleComplete();
+                    }
                 } else {
-                    setUseSeconds(prev => prev + 1);
+                    setUseSeconds(totalElapsed);
                 }
-            }, 1000);
+            }, 100);
         } else {
             clearInterval(timerRef.current);
+            if (startTimeRef.current) {
+                elapsedRef.current += Math.floor((Date.now() - startTimeRef.current) / 1000);
+                startTimeRef.current = null;
+            }
         }
         return () => clearInterval(timerRef.current);
-    }, [isActive, isTimerMode]);
+    }, [isActive, isTimerMode, mode]);
 
     const handleComplete = () => {
         setIsActive(false);
@@ -48,8 +106,10 @@ function FocusTimer({ onTimerComplete }) {
 
     const toggleTimer = () => setIsActive(!isActive);
 
-    const resetTimer = () => {
+const resetTimer = () => {
         setIsActive(false);
+        startTimeRef.current = null;
+        elapsedRef.current = 0;
         if (isTimerMode) {
             setTimeLeft(MODES[mode].minutes * 60);
         } else {
@@ -57,8 +117,10 @@ function FocusTimer({ onTimerComplete }) {
         }
     };
 
-    const switchMode = (newMode) => {
+const switchMode = (newMode) => {
         setIsActive(false);
+        startTimeRef.current = null;
+        elapsedRef.current = 0;
         setMode(newMode);
         if (isTimerMode) {
             setTimeLeft(MODES[newMode].minutes * 60);
@@ -67,7 +129,8 @@ function FocusTimer({ onTimerComplete }) {
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
-        return mins;
+        const secs = seconds % 60;
+        return { mins, secs };
     };
 
     const totalSeconds = isTimerMode ? MODES[mode].minutes * 60 : 3600; // 60 mins for stopwatch wrap
@@ -90,7 +153,7 @@ function FocusTimer({ onTimerComplete }) {
             const x2 = centerX + radius * Math.cos(rad);
             const y2 = centerY + radius * Math.sin(rad);
 
-            // Progress logic: for timer, ticks disappear or dim. For stopwatch, they fill up.
+            // Progress logic: for timer, ticks disappear as time runs out. For stopwatch, they fill up.
             const isActiveTick = isTimerMode
                 ? (i / tickCount) < (timeLeft / (MODES[mode].minutes * 60))
                 : (i / tickCount) < ((useSeconds % 3600) / 3600);
@@ -172,10 +235,12 @@ function FocusTimer({ onTimerComplete }) {
 
                 <div style={{ position: 'absolute', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                     <span style={{ fontSize: '3.5rem', fontWeight: '300', color: 'var(--text-main)', lineHeight: 1 }}>
-                        {isTimerMode ? Math.ceil(timeLeft / 60) : Math.floor(useSeconds / 60)}
+                        {isTimerMode ? formatTime(timeLeft).mins : formatTime(useSeconds).mins}
                     </span>
                     <span style={{ fontSize: '1.2rem', fontWeight: '300', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                        min
+                        {isTimerMode && formatTime(timeLeft).secs > 0 ? `:${formatTime(timeLeft).secs.toString().padStart(2, '0')}` : 
+                         !isTimerMode && formatTime(useSeconds).secs > 0 ? `:${formatTime(useSeconds).secs.toString().padStart(2, '0')}` : 
+                         'min'}
                     </span>
                 </div>
             </div>

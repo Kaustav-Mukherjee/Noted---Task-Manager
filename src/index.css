@@ -219,6 +219,23 @@ textarea {
     .dashboard-sidebar>div {
         padding: 12px !important;
     }
+
+    /* Fix Focus Mode layout for mobile - make vertical */
+    .focus-mode-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: var(--spacing-md) !important;
+    }
+
+    /* Improve component sizing on mobile */
+    .focus-mode-grid > div {
+        min-height: 300px !important;
+    }
+
+    /* Adjust YouTube player aspect ratio for mobile */
+    .focus-mode-grid iframe {
+        min-height: 200px !important;
+    }
 }
 
 /* Custom scrollbar */

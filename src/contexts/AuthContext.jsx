@@ -30,9 +30,11 @@ export function AuthProvider({ children }) {
     const signInWithGoogle = async () => {
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            return { user: result.user, error: null };
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const token = credential?.accessToken;
+            return { user: result.user, token, error: null };
         } catch (error) {
-            return { user: null, error: error.message };
+            return { user: null, token: null, error: error.message };
         }
     };
 
