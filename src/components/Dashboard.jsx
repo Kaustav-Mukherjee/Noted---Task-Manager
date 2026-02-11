@@ -54,12 +54,26 @@ function Dashboard({
     const today = new Date();
 
     const handleDateClick = (date) => {
-        const dateTasks = tasks.filter(t => isSameDay(new Date(t.date), date));
-        const dateReminders = reminders.filter(r => r.dueDate && isSameDay(new Date(r.dueDate), date));
-        const dateGoogleEvents = googleEvents.filter(e => {
-            const eventStart = new Date(e.start.dateTime || e.start.date);
-            return isSameDay(eventStart, date);
+        if (!date || isNaN(new Date(date).getTime())) return;
+
+        const dateTasks = tasks.filter(t => {
+            if (!t.date) return false;
+            const d = new Date(t.date);
+            return !isNaN(d.getTime()) && isSameDay(d, date);
         });
+
+        const dateReminders = reminders.filter(r => {
+            if (!r.dueDate) return false;
+            const d = new Date(r.dueDate);
+            return !isNaN(d.getTime()) && isSameDay(d, date);
+        });
+
+        const dateGoogleEvents = googleEvents.filter(e => {
+            if (!e.start || (!e.start.dateTime && !e.start.date)) return false;
+            const eventStart = new Date(e.start.dateTime || e.start.date);
+            return !isNaN(eventStart.getTime()) && isSameDay(eventStart, date);
+        });
+
         setSelectedDateData({ date, tasks: dateTasks, reminders: dateReminders, googleEvents: dateGoogleEvents });
         setShowDateModal(true);
     };
@@ -144,7 +158,11 @@ function Dashboard({
             const labelDays = [1, 5, 10, 15, 20, 25, days.length];
             return days.map((day, i) => {
                 const dayNum = i + 1;
-                const sessionsThisDay = studySessions.filter(s => isSameDay(new Date(s.date), day));
+                const sessionsThisDay = studySessions.filter(s => {
+                    if (!s.date) return false;
+                    const d = new Date(s.date);
+                    return !isNaN(d.getTime()) && isSameDay(d, day);
+                });
                 return {
                     name: labelDays.includes(dayNum) ? format(day, 'd') : '',
                     hours: sessionsThisDay.reduce((acc, curr) => acc + curr.hours, 0),
@@ -815,10 +833,19 @@ function Dashboard({
                         {calendarDays.map((day, idx) => {
                             const isToday = isSameDay(day, today);
                             const isCurrentMonth = isSameMonth(day, currentMonth);
-                            const hasActivity = tasks.some(t => isSameDay(new Date(t.date), day)) || reminders.some(r => r.dueDate && isSameDay(new Date(r.dueDate), day));
+                            const hasActivity = tasks.some(t => {
+                                if (!t.date) return false;
+                                const d = new Date(t.date);
+                                return !isNaN(d.getTime()) && isSameDay(d, day);
+                            }) || reminders.some(r => {
+                                if (!r.dueDate) return false;
+                                const d = new Date(r.dueDate);
+                                return !isNaN(d.getTime()) && isSameDay(d, day);
+                            });
                             const hasGoogleEvent = googleEvents.some(e => {
+                                if (!e.start || (!e.start.dateTime && !e.start.date)) return false;
                                 const eventStart = new Date(e.start.dateTime || e.start.date);
-                                return isSameDay(eventStart, day);
+                                return !isNaN(eventStart.getTime()) && isSameDay(eventStart, day);
                             });
 
                             return (
