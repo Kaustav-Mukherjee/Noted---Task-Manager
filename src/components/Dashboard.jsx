@@ -361,8 +361,8 @@ function Dashboard({
                                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
                                 dy={5}
                             />
-                            <Bar dataKey="total" fill="var(--text-muted)" opacity={0.4} radius={[3, 3, 3, 3]} barSize={8} />
-                            <Bar dataKey="completed" fill="var(--text-main)" radius={[3, 3, 3, 3]} barSize={8} />
+                            <Bar dataKey="total" stackId="a" fill="var(--text-muted)" opacity={0.4} radius={[0, 0, 3, 3]} barSize={20} />
+                            <Bar dataKey="completed" stackId="a" fill="var(--text-main)" radius={[3, 3, 0, 0]} barSize={20} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
