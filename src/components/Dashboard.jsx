@@ -594,7 +594,7 @@ function Dashboard({
                 transition: 'all var(--transition-main)',
                 position: 'relative'
             }}>
-                {/* Subtle Edge Glow Effect for Goal Completion - contained within card with rounded corners */}
+                {/* Premium Apple-Level Edge Glow Effect for Goal Completion */}
                 {goalCompleted && (
                     <div style={{
                         position: 'absolute',
@@ -604,95 +604,72 @@ function Dashboard({
                         pointerEvents: 'none',
                         zIndex: 1
                     }}>
-                        {/* Top edge gradient */}
+                        {/* Outer glow layer - brighter */}
                         <div style={{
                             position: 'absolute',
-                            top: 0,
-                            left: 8,
-                            right: 8,
-                            height: '30px',
-                            background: 'linear-gradient(180deg, rgba(255,0,128,0.2) 0%, transparent 100%)',
-                            filter: 'blur(6px)',
-                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-                            borderRadius: '15px 15px 0 0'
-                        }} />
-                        {/* Bottom edge gradient */}
-                        <div style={{
-                            position: 'absolute',
-                            bottom: 0,
-                            left: 8,
-                            right: 8,
-                            height: '30px',
-                            background: 'linear-gradient(0deg, rgba(64,224,208,0.2) 0%, transparent 100%)',
-                            filter: 'blur(6px)',
-                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards',
-                            borderRadius: '0 0 15px 15px'
-                        }} />
-                        {/* Left edge gradient */}
-                        <div style={{
-                            position: 'absolute',
-                            top: 8,
-                            left: 0,
-                            bottom: 8,
-                            width: '30px',
-                            background: 'linear-gradient(90deg, rgba(255,140,0,0.15) 0%, transparent 100%)',
-                            filter: 'blur(6px)',
-                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards',
-                            borderRadius: '15px 0 0 15px'
-                        }} />
-                        {/* Right edge gradient */}
-                        <div style={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 0,
-                            bottom: 8,
-                            width: '30px',
-                            background: 'linear-gradient(270deg, rgba(123,44,191,0.15) 0%, transparent 100%)',
-                            filter: 'blur(6px)',
-                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards',
-                            borderRadius: '0 15px 15px 0'
-                        }} />
-                        {/* Animated border lines */}
-                        <div style={{
-                            position: 'absolute',
-                            top: 2,
-                            left: 16,
-                            right: 16,
-                            height: '1px',
-                            background: 'linear-gradient(90deg, transparent, rgba(255,0,128,0.5), rgba(255,140,0,0.5), transparent)',
-                            backgroundSize: '200% 100%',
-                            animation: 'shimmer 2s ease-in-out infinite',
+                            inset: '-2px',
+                            borderRadius: 'calc(var(--radius) + 2px)',
+                            background: 'linear-gradient(135deg, rgba(255,0,128,0.4) 0%, rgba(255,140,0,0.4) 25%, rgba(64,224,208,0.4) 50%, rgba(123,44,191,0.4) 75%, rgba(255,0,128,0.4) 100%)',
+                            filter: 'blur(8px)',
                             opacity: 0,
-                            borderRadius: '1px'
-                        }} className="border-animate" />
+                            animation: 'appleGlowIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards, appleGlowPulse 3s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.8s forwards'
+                        }} />
+                        
+                        {/* Middle glow layer */}
                         <div style={{
                             position: 'absolute',
-                            bottom: 2,
-                            left: 16,
-                            right: 16,
-                            height: '1px',
-                            background: 'linear-gradient(90deg, transparent, rgba(64,224,208,0.5), rgba(123,44,191,0.5), transparent)',
-                            backgroundSize: '200% 100%',
-                            animation: 'shimmer 2s ease-in-out infinite reverse',
+                            inset: '-1px',
+                            borderRadius: 'calc(var(--radius) + 1px)',
+                            background: 'linear-gradient(90deg, rgba(255,0,128,0.3), rgba(64,224,208,0.3), rgba(255,140,0,0.3), rgba(123,44,191,0.3))',
+                            filter: 'blur(4px)',
                             opacity: 0,
-                            borderRadius: '1px'
-                        }} className="border-animate" />
+                            animation: 'appleGlowIn 0.6s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.1s forwards'
+                        }} />
+                        
+                        {/* Continuous border animation around entire edge */}
+                        <div style={{
+                            position: 'absolute',
+                            inset: '0',
+                            borderRadius: 'var(--radius)',
+                            padding: '2px',
+                            background: 'linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
+                            backgroundSize: '400% 100%',
+                            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                            WebkitMaskComposite: 'xor',
+                            maskComposite: 'exclude',
+                            opacity: 0,
+                            animation: 'borderGlowIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.3s forwards, borderFlow 3s linear 0.8s forwards'
+                        }} />
+                        
+                        {/* Inner highlight */}
+                        <div style={{
+                            position: 'absolute',
+                            inset: '2px',
+                            borderRadius: 'calc(var(--radius) - 2px)',
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%)',
+                            opacity: 0,
+                            animation: 'appleGlowIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.5s forwards'
+                        }} />
+                        
                         <style>{`
-                            @keyframes glowFadeIn {
+                            @keyframes appleGlowIn {
+                                0% { opacity: 0; transform: scale(0.98); }
+                                100% { opacity: 1; transform: scale(1); }
+                            }
+                            @keyframes appleGlowPulse {
+                                0% { opacity: 0.8; }
+                                50% { opacity: 0.5; }
+                                100% { opacity: 0.8; }
+                            }
+                            @keyframes borderGlowIn {
                                 0% { opacity: 0; }
-                                100% { opacity: 1; }
+                                100% { opacity: 0.9; }
                             }
-                            @keyframes shimmer {
-                                0% { background-position: -200% 0; opacity: 0.4; }
-                                50% { opacity: 0.7; }
-                                100% { background-position: 200% 0; opacity: 0.4; }
-                            }
-                            .border-animate {
-                                animation: borderFadeIn 0.5s ease forwards, shimmer 2s ease-in-out infinite !important;
-                            }
-                            @keyframes borderFadeIn {
-                                0% { opacity: 0; }
-                                100% { opacity: 0.6; }
+                            @keyframes borderFlow {
+                                0% { background-position: 0% 50%; opacity: 0.9; }
+                                33% { background-position: 100% 50%; opacity: 0.7; }
+                                66% { background-position: 200% 50%; opacity: 0.9; }
+                                100% { background-position: 300% 50%; opacity: 0.6; }
                             }
                         `}</style>
                     </div>
