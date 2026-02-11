@@ -332,12 +332,7 @@ function App() {
                                 <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
                             </div>
 
-                            <div className="focus-mode-grid" style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: 'var(--spacing-lg)',
-                                alignItems: 'start'
-                            }}>
+                            <div className="focus-mode-grid">
                                 <FocusTimer onTimerComplete={(hours) => addStudySession(hours)} />
                                 <YouTubeNowPlaying />
                             </div>

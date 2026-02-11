@@ -282,8 +282,8 @@ function FocusTimer({ onTimerComplete }) {
             </div>
 
             {/* Circular UI */}
-            <div style={{ position: 'relative', width: '220px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="220" height="220" viewBox="0 0 200 200">
+            <div style={{ position: 'relative', width: '100%', maxWidth: '220px', aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="100%" height="100%" viewBox="0 0 200 200" style={{ maxWidth: '100%', maxHeight: '100%' }}>
                     {renderTicks()}
                 </svg>
 
