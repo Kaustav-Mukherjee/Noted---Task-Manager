@@ -8,7 +8,9 @@ import {
     where,
     onSnapshot,
     orderBy,
-    serverTimestamp
+    serverTimestamp,
+    getDoc,
+    setDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -192,6 +194,37 @@ export const subscribeFolders = (userId, callback) => {
         callback(folders);
     });
 };
+// User Preferences Collection
+export const preferencesCollection = (userId) => collection(db, 'users', userId, 'preferences');
+
+export const getUserPreferences = async (userId) => {
+    const prefsRef = doc(db, 'users', userId, 'preferences', 'settings');
+    const prefsSnap = await getDoc(prefsRef);
+    if (prefsSnap.exists()) {
+        return prefsSnap.data();
+    }
+    return null;
+};
+
+export const updateUserPreferences = async (userId, preferences) => {
+    const prefsRef = doc(db, 'users', userId, 'preferences', 'settings');
+    await setDoc(prefsRef, {
+        ...preferences,
+        updatedAt: serverTimestamp()
+    }, { merge: true });
+};
+
+export const subscribeUserPreferences = (userId, callback) => {
+    const prefsRef = doc(db, 'users', userId, 'preferences', 'settings');
+    return onSnapshot(prefsRef, (snapshot) => {
+        if (snapshot.exists()) {
+            callback(snapshot.data());
+        } else {
+            callback(null);
+        }
+    });
+};
+
 // Goals Collection
 export const goalsCollection = (userId) => collection(db, 'users', userId, 'goals');
 

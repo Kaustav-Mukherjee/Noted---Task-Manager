@@ -24,7 +24,7 @@ const safeIsAfter = (d1, d2) => {
     return isAfter(date1, date2);
 };
 
-function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateReminder, googleToken, googleEvents = [], onGoogleEventsChange }) {
+function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateReminder, googleToken, googleEvents = [], onGoogleEventsChange, userPreferences }) {
     const [view, setView] = useState('today'); // 'today' | 'upcoming' | 'all'
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -47,11 +47,21 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
         description: '',
         type: 'reminder', // 'reminder' | 'event' | 'meeting'
         attendees: '',
-        addToGoogleCalendar: true
+        addToGoogleCalendar: false
     });
     const [expandedId, setExpandedId] = useState(null);
 
     const today = new Date();
+    
+    // Update addToGoogleCalendar when userPreferences change
+    useEffect(() => {
+        if (userPreferences && googleToken) {
+            setNewReminder(prev => ({
+                ...prev,
+                addToGoogleCalendar: userPreferences.autoSyncGoogleCalendar !== false
+            }));
+        }
+    }, [userPreferences, googleToken]);
     
     // Save completed Google events to localStorage
     useEffect(() => {
@@ -180,6 +190,14 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
         }
     };
 
+    // Determine if should auto-sync to Google Calendar based on user preferences
+    const shouldAutoSync = () => {
+        if (!googleToken) return false;
+        if (!userPreferences) return false;
+        // Auto-sync if user has enabled autoSyncGoogleCalendar in preferences
+        return userPreferences.autoSyncGoogleCalendar !== false;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!newReminder.title.trim()) return;
@@ -214,7 +232,7 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                     setNewReminder({
                         title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00',
                         endTime: '', location: '', description: '', type: 'reminder', attendees: '',
-                        addToGoogleCalendar: false
+                        addToGoogleCalendar: shouldAutoSync()
                     });
                 } catch (error) {
                     console.error('Failed to update Google Calendar event:', error);
@@ -237,8 +255,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                 active: true
             };
 
-            // Push to Google Calendar if checkbox is checked and we have a token
-            if (newReminder.addToGoogleCalendar && googleToken) {
+            // Auto-sync to Google Calendar if enabled in preferences and we have a token
+            // OR if user manually checked the checkbox
+            const shouldSync = (shouldAutoSync() || newReminder.addToGoogleCalendar) && googleToken;
+            
+            if (shouldSync) {
                 try {
                     const calEvent = buildCalendarEvent({
                         title: newReminder.title,
@@ -290,7 +311,7 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
             setNewReminder({
                 title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00',
                 endTime: '', location: '', description: '', type: 'reminder', attendees: '',
-                addToGoogleCalendar: false
+                addToGoogleCalendar: shouldAutoSync()
             });
             setShowAddForm(false);
         } finally {
@@ -342,11 +363,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                     onClick={() => {
                         if (showAddForm) {
                             setEditingId(null);
-                            setNewReminder({
-                                title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00',
-                                endTime: '', location: '', description: '', type: 'reminder', attendees: '',
-                                addToGoogleCalendar: false
-                            });
+                    setNewReminder({
+                        title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00',
+                        endTime: '', location: '', description: '', type: 'reminder', attendees: '',
+                        addToGoogleCalendar: shouldAutoSync()
+                    });
                         }
                         setShowAddForm(!showAddForm);
                     }}
@@ -613,7 +634,7 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                             />
                             <Calendar size={14} color="#4285F4" />
                             <span style={{ color: newReminder.addToGoogleCalendar ? '#4285F4' : 'var(--text-muted)', fontWeight: newReminder.addToGoogleCalendar ? '600' : '400' }}>
-                                Add to Google Calendar
+                                {shouldAutoSync() ? 'Auto-sync enabled - ' : ''}Add to Google Calendar
                                 {newReminder.type === 'meeting' && ' (with Google Meet)'}
                             </span>
                         </label>

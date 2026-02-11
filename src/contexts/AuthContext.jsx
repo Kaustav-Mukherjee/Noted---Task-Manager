@@ -8,6 +8,7 @@ import {
     GoogleAuthProvider
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
+import { subscribeUserPreferences, updateUserPreferences } from '../services/firestoreService';
 
 const AuthContext = createContext({});
 
@@ -17,14 +18,48 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [googleToken, setGoogleToken] = useState(localStorage.getItem('google_access_token'));
+    const [userPreferences, setUserPreferences] = useState(null);
+    const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user);
             setLoading(false);
-            // Clear token if user signs out
-            if (!user) {
+            
+            if (user) {
+                // Check if user has previously connected Google Calendar
+                const savedConnection = localStorage.getItem(`google_calendar_connected_${user.uid}`);
+                if (savedConnection === 'true') {
+                    setIsGoogleCalendarConnected(true);
+                    // Try to refresh token on load if it was previously connected
+                    const savedToken = localStorage.getItem('google_access_token');
+                    if (savedToken) {
+                        setGoogleToken(savedToken);
+                    }
+                }
+                
+                // Subscribe to user preferences
+                const unsubPrefs = subscribeUserPreferences(user.uid, (prefs) => {
+                    if (prefs) {
+                        setUserPreferences(prefs);
+                    } else {
+                        // Set default preferences
+                        setUserPreferences({
+                            autoSyncGoogleCalendar: true,
+                            syncRemindersToCalendar: true,
+                            syncCalendarToApp: true
+                        });
+                    }
+                });
+                
+                return () => {
+                    if (unsubPrefs) unsubPrefs();
+                };
+            } else {
+                // Clear token if user signs out
                 setGoogleToken(null);
+                setIsGoogleCalendarConnected(false);
+                setUserPreferences(null);
                 localStorage.removeItem('google_access_token');
             }
         });
@@ -41,6 +76,11 @@ export function AuthProvider({ children }) {
             if (token) {
                 setGoogleToken(token);
                 localStorage.setItem('google_access_token', token);
+                // Mark Google Calendar as connected for this user
+                if (result.user) {
+                    localStorage.setItem(`google_calendar_connected_${result.user.uid}`, 'true');
+                    setIsGoogleCalendarConnected(true);
+                }
             }
             return { user: result.user, token, error: null };
         } catch (error) {
@@ -57,11 +97,33 @@ export function AuthProvider({ children }) {
             if (token) {
                 setGoogleToken(token);
                 localStorage.setItem('google_access_token', token);
+                if (user) {
+                    localStorage.setItem(`google_calendar_connected_${user.uid}`, 'true');
+                    setIsGoogleCalendarConnected(true);
+                }
             }
             return token;
         } catch (error) {
             console.error('Failed to refresh Google token:', error);
             return null;
+        }
+    };
+
+    // Update user preferences
+    const updatePreferences = async (newPreferences) => {
+        if (user) {
+            await updateUserPreferences(user.uid, newPreferences);
+            setUserPreferences(prev => ({ ...prev, ...newPreferences }));
+        }
+    };
+
+    // Disconnect Google Calendar
+    const disconnectGoogleCalendar = () => {
+        setGoogleToken(null);
+        setIsGoogleCalendarConnected(false);
+        localStorage.removeItem('google_access_token');
+        if (user) {
+            localStorage.removeItem(`google_calendar_connected_${user.uid}`);
         }
     };
 
@@ -112,7 +174,11 @@ export function AuthProvider({ children }) {
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
-        logout
+        logout,
+        userPreferences,
+        updatePreferences,
+        isGoogleCalendarConnected,
+        disconnectGoogleCalendar
     };
 
     return (

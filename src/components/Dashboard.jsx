@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
-import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown, Calendar as CalendarIcon, RefreshCw, Link, MapPin, FileText, Users, Video, Clock, Goal, Plus, Zap, AlertCircle } from 'lucide-react';
+import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown, Calendar as CalendarIcon, RefreshCw, Link, MapPin, FileText, Users, Video, Clock, Goal, Plus, Zap, AlertCircle, Settings } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, isSameDay, isSameMonth, subDays, subMonths, addMonths, parseISO, isAfter, isBefore } from 'date-fns';
 import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
@@ -53,11 +53,12 @@ function Dashboard({
     const [showDateModal, setShowDateModal] = useState(false);
     const [showNavPopover, setShowNavPopover] = useState(false);
     const [isCalendarMinimized, setIsCalendarMinimized] = useState(false);
+    const [showCalendarSettings, setShowCalendarSettings] = useState(false);
 
     // Google Calendar State
     const [googleEvents, setGoogleEvents] = useState([]);
     const [isSyncing, setIsSyncing] = useState(false);
-    const { signInWithGoogle, user, googleToken, setGoogleToken, clearGoogleToken, refreshGoogleToken } = useAuth();
+    const { signInWithGoogle, user, googleToken, setGoogleToken, clearGoogleToken, refreshGoogleToken, userPreferences, updatePreferences, isGoogleCalendarConnected, disconnectGoogleCalendar } = useAuth();
     const syncIntervalRef = useRef(null);
 
     // Event Creation State
@@ -879,6 +880,13 @@ function Dashboard({
                         {isSyncing ? <RefreshCw size={16} className="spin" /> : googleToken ? <RefreshCw size={16} /> : <Link size={16} />}
                     </button>
                     <button
+                        onClick={() => setShowCalendarSettings(true)}
+                        style={{ padding: '4px', borderRadius: '6px', color: isGoogleCalendarConnected ? '#4285F4' : 'var(--text-muted)' }}
+                        title="Calendar Settings"
+                    >
+                        <Settings size={16} />
+                    </button>
+                    <button
                         onClick={() => setIsCalendarMinimized(!isCalendarMinimized)}
                         style={{ padding: '4px', borderRadius: '6px', color: 'var(--text-muted)' }}
                     >
@@ -934,6 +942,164 @@ function Dashboard({
                             <button onClick={() => setCurrentMonth(subMonths(currentMonth, 12))} style={{ padding: '4px' }}><ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} /></button>
                             <span style={{ fontSize: '0.9rem', fontWeight: '800' }}>{format(currentMonth, 'yyyy')}</span>
                             <button onClick={() => setCurrentMonth(addMonths(currentMonth, 12))} style={{ padding: '4px' }}><ChevronRight size={16} /></button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Calendar Settings Modal */}
+                {showCalendarSettings && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '50px',
+                        right: '16px',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        zIndex: 100,
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                        width: '280px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: '700' }}>Calendar Settings</h4>
+                            <button onClick={() => setShowCalendarSettings(false)} style={{ padding: '4px' }}>
+                                <X size={16} />
+                            </button>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {/* Connection Status */}
+                            <div style={{ 
+                                padding: '10px', 
+                                borderRadius: '8px', 
+                                backgroundColor: isGoogleCalendarConnected ? 'rgba(52, 168, 83, 0.1)' : 'var(--bg-input)',
+                                border: `1px solid ${isGoogleCalendarConnected ? 'rgba(52, 168, 83, 0.3)' : 'var(--border)'}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                            }}>
+                                <div style={{ 
+                                    width: '8px', 
+                                    height: '8px', 
+                                    borderRadius: '50%', 
+                                    backgroundColor: isGoogleCalendarConnected ? '#34A853' : '#9CA3AF'
+                                }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: '600' }}>
+                                        {isGoogleCalendarConnected ? 'Connected to Google Calendar' : 'Not Connected'}
+                                    </div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                        {isGoogleCalendarConnected ? 'Your calendar is syncing' : 'Sign in to sync with Google Calendar'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Auto-sync Toggle */}
+                            {isGoogleCalendarConnected && (
+                                <>
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '10px',
+                                        borderRadius: '8px',
+                                        backgroundColor: userPreferences?.autoSyncGoogleCalendar !== false ? 'rgba(66, 133, 244, 0.1)' : 'var(--bg-input)',
+                                        border: `1px solid ${userPreferences?.autoSyncGoogleCalendar !== false ? 'rgba(66, 133, 244, 0.3)' : 'var(--border)'}`,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={userPreferences?.autoSyncGoogleCalendar !== false}
+                                            onChange={(e) => updatePreferences({ autoSyncGoogleCalendar: e.target.checked })}
+                                            style={{ accentColor: '#4285F4' }}
+                                        />
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: '600', color: userPreferences?.autoSyncGoogleCalendar !== false ? '#4285F4' : 'var(--text-main)' }}>
+                                                Auto-sync Reminders
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                                Automatically add events to Google Calendar
+                                            </div>
+                                        </div>
+                                    </label>
+
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '10px',
+                                        borderRadius: '8px',
+                                        backgroundColor: userPreferences?.syncCalendarToApp !== false ? 'rgba(66, 133, 244, 0.1)' : 'var(--bg-input)',
+                                        border: `1px solid ${userPreferences?.syncCalendarToApp !== false ? 'rgba(66, 133, 244, 0.3)' : 'var(--border)'}`,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={userPreferences?.syncCalendarToApp !== false}
+                                            onChange={(e) => updatePreferences({ syncCalendarToApp: e.target.checked })}
+                                            style={{ accentColor: '#4285F4' }}
+                                        />
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: '600', color: userPreferences?.syncCalendarToApp !== false ? '#4285F4' : 'var(--text-main)' }}>
+                                                Import Google Events
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                                Show Google Calendar events in app
+                                            </div>
+                                        </div>
+                                    </label>
+                                </>
+                            )}
+
+                            {/* Connect/Disconnect Button */}
+                            {isGoogleCalendarConnected ? (
+                                <button
+                                    onClick={() => {
+                                        disconnectGoogleCalendar();
+                                        setShowCalendarSettings(false);
+                                    }}
+                                    style={{
+                                        padding: '10px',
+                                        borderRadius: '8px',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        color: '#ef4444',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '600',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        transition: 'all 0.2s ease',
+                                        cursor: 'pointer'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                                >
+                                    Disconnect Google Calendar
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={async () => {
+                                        const result = await signInWithGoogle();
+                                        if (result.token) {
+                                            fetchGoogleEvents(result.token);
+                                        }
+                                        setShowCalendarSettings(false);
+                                    }}
+                                    style={{
+                                        padding: '10px',
+                                        borderRadius: '8px',
+                                        backgroundColor: '#4285F4',
+                                        color: 'white',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '600',
+                                        border: 'none',
+                                        transition: 'all 0.2s ease',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Connect Google Calendar
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -1114,8 +1280,9 @@ function Dashboard({
                 onDeleteReminder={onDeleteReminder}
                 onUpdateReminder={onUpdateReminder}
                 googleToken={googleToken}
-                googleEvents={googleEvents}
+                googleEvents={userPreferences?.syncCalendarToApp !== false ? googleEvents : []}
                 onGoogleEventsChange={setGoogleEvents}
+                userPreferences={userPreferences}
             />
 
             <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)' }}>
