@@ -6,7 +6,7 @@ import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
 import QuotesSection from './QuotesSection';
 import { useAuth } from '../contexts/AuthContext';
-import { getCalendarEvents } from '../services/googleCalendarService';
+import { getCalendarEvents, createCalendarEvent } from '../services/googleCalendarService';
 
 import { Goal } from 'lucide-react';
 
@@ -37,6 +37,11 @@ function Dashboard({
     const [isSyncing, setIsSyncing] = useState(false);
     const [googleToken, setGoogleToken] = useState(localStorage.getItem('google_access_token'));
     const { signInWithGoogle, user } = useAuth();
+
+    // Event Creation State
+    const [newEventTitle, setNewEventTitle] = useState('');
+    const [newEventTime, setNewEventTime] = useState('');
+    const [isCreatingEvent, setIsCreatingEvent] = useState(false);
 
     const today = new Date();
 
@@ -170,7 +175,9 @@ function Dashboard({
         try {
             const start = startOfMonth(subMonths(currentMonth, 1));
             const end = endOfMonth(addMonths(currentMonth, 1));
+            console.log('Fetching Google Events for range:', start, end);
             const events = await getCalendarEvents(token, start, end);
+            console.log('Fetched Google Events:', events);
             setGoogleEvents(events);
         } catch (error) {
             console.error("Failed to sync calendar", error);
@@ -230,6 +237,36 @@ function Dashboard({
         setGoalInput('');
     };
 
+
+    const handleCreateGoogleEvent = async (e) => {
+        e.preventDefault();
+        if (!newEventTitle || !googleToken) return;
+
+        setIsCreatingEvent(true);
+        try {
+            const dateStr = format(selectedDateData.date, 'yyyy-MM-dd');
+            const startDateTime = newEventTime ? new Date(`${dateStr}T${newEventTime}:00`) : new Date(dateStr);
+            const endDateTime = newEventTime ? new Date(startDateTime.getTime() + 60 * 60 * 1000) : new Date(dateStr); // Default 1 hour duration
+
+            const event = {
+                summary: newEventTitle,
+                start: newEventTime ? { dateTime: startDateTime.toISOString() } : { date: dateStr },
+                end: newEventTime ? { dateTime: endDateTime.toISOString() } : { date: dateStr }
+            };
+
+            await createCalendarEvent(googleToken, event);
+            await fetchGoogleEvents(googleToken);
+            setNewEventTitle('');
+            setNewEventTime('');
+            setShowDateModal(false);
+            alert('Event added to Google Calendar!');
+        } catch (error) {
+            console.error('Failed to create event:', error);
+            alert('Failed to create event. See console.');
+        } finally {
+            setIsCreatingEvent(false);
+        }
+    };
 
     // Time Range Toggle Component
     const TimeRangeToggle = ({ value, onChange }) => (
@@ -789,6 +826,50 @@ function Dashboard({
                                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No plans for this day.</div>
                             )}
                         </div>
+
+                        {/* Add Google Event Section */}
+                        {googleToken && (
+                            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                                <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>Add to Google Calendar</h5>
+                                <form onSubmit={handleCreateGoogleEvent} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Event Title"
+                                        value={newEventTitle}
+                                        onChange={(e) => setNewEventTitle(e.target.value)}
+                                        style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
+                                        required
+                                    />
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input
+                                            type="time"
+                                            value={newEventTime}
+                                            onChange={(e) => setNewEventTime(e.target.value)}
+                                            style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={isCreatingEvent}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                borderRadius: '8px',
+                                                backgroundColor: '#4285F4',
+                                                color: 'white',
+                                                fontWeight: '600',
+                                                fontSize: '0.8rem',
+                                                opacity: isCreatingEvent ? 0.7 : 1,
+                                                cursor: isCreatingEvent ? 'not-allowed' : 'pointer',
+                                                border: 'none',
+                                                transition: 'opacity 0.2s'
+                                            }}
+                                        >
+                                            {isCreatingEvent ? 'Adding...' : 'Add Event'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

@@ -33,3 +33,35 @@ export const getCalendarEvents = async (accessToken, timeMin, timeMax) => {
         throw error;
     }
 };
+
+/**
+ * Create a new event in the primary calendar
+ * @param {string} accessToken - The OAuth2 access token
+ * @param {Object} event - The event object (summary, start, end)
+ * @returns {Promise<Object>} - The created event
+ */
+export const createCalendarEvent = async (accessToken, event) => {
+    try {
+        const response = await fetch(
+            'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(event)
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error.message || 'Failed to create calendar event');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating Google Calendar event:', error);
+        throw error;
+    }
+};
