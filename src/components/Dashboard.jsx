@@ -75,6 +75,25 @@ function Dashboard({
     const [retroStudy, setRetroStudy] = useState('');
     const [isSubmittingRetro, setIsSubmittingRetro] = useState(false);
 
+    // Update selectedDateData when tasks change and modal is open
+    useEffect(() => {
+        if (showDateModal && selectedDateData) {
+            const dateTasks = tasks.filter(t => safeIsSameDay(t.date, selectedDateData.date));
+            const dateReminders = reminders.filter(r => r.dueDate && safeIsSameDay(r.dueDate, selectedDateData.date));
+            const dateGoogleEvents = googleEvents.filter(e => {
+                const start = e.start?.dateTime || e.start?.date;
+                return safeIsSameDay(start, selectedDateData.date);
+            });
+
+            setSelectedDateData(prev => ({
+                ...prev,
+                tasks: dateTasks,
+                reminders: dateReminders,
+                googleEvents: dateGoogleEvents
+            }));
+        }
+    }, [tasks, reminders, googleEvents, showDateModal]);
+
     const today = new Date();
 
     const handleDateClick = (date) => {
@@ -380,7 +399,15 @@ function Dashboard({
         setIsSubmittingRetro(true);
         try {
             if (onAddTask) {
-                await onAddTask(retroTask, selectedDateData.date.toISOString());
+                const dateStr = selectedDateData.date.toISOString();
+                await onAddTask(retroTask, dateStr);
+                
+                // Refresh selectedDateData to show the newly added task
+                const dateTasks = tasks.filter(t => safeIsSameDay(t.date, selectedDateData.date));
+                setSelectedDateData(prev => ({
+                    ...prev,
+                    tasks: dateTasks
+                }));
             }
         } catch (error) {
             console.error("Failed to add retroactive task", error);
@@ -1223,7 +1250,7 @@ function Dashboard({
                                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '8px' }}>
                                         <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '12px' }}>Add Historical Data</h5>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                            <form onSubmit={(e) => { e.preventDefault(); handleAddRetroTask(e); }} style={{ display: 'flex', gap: '8px' }}>
                                                 <input
                                                     type="text"
                                                     placeholder="Task description..."
@@ -1232,18 +1259,15 @@ function Dashboard({
                                                     style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
                                                 />
                                                 <button
-                                                    onClick={() => {
-                                                        if (!retroTask.trim()) return;
-                                                        onAddTask(retroTask, selectedDateData.date);
-                                                        setRetroTask('');
-                                                    }}
-                                                    style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'var(--text-main)', color: 'var(--bg-app)', fontWeight: '600', fontSize: '0.75rem' }}
+                                                    type="submit"
+                                                    disabled={isSubmittingRetro}
+                                                    style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'var(--text-main)', color: 'var(--bg-app)', fontWeight: '600', fontSize: '0.75rem', opacity: isSubmittingRetro ? 0.7 : 1 }}
                                                 >
-                                                    Add Task
+                                                    {isSubmittingRetro ? 'Adding...' : 'Add Task'}
                                                 </button>
-                                            </div>
+                                            </form>
 
-                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                            <form onSubmit={(e) => { e.preventDefault(); handleAddRetroStudy(e); }} style={{ display: 'flex', gap: '8px' }}>
                                                 <input
                                                     type="number"
                                                     placeholder="Study hours..."
@@ -1253,16 +1277,13 @@ function Dashboard({
                                                     style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
                                                 />
                                                 <button
-                                                    onClick={() => {
-                                                        if (!retroStudy || isNaN(parseFloat(retroStudy))) return;
-                                                        addStudySession(parseFloat(retroStudy), selectedDateData.date);
-                                                        setRetroStudy('');
-                                                    }}
-                                                    style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: '#3b82f6', color: 'white', fontWeight: '600', fontSize: '0.75rem' }}
+                                                    type="submit"
+                                                    disabled={isSubmittingRetro}
+                                                    style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: '#3b82f6', color: 'white', fontWeight: '600', fontSize: '0.75rem', opacity: isSubmittingRetro ? 0.7 : 1 }}
                                                 >
-                                                    Add Hours
+                                                    {isSubmittingRetro ? 'Adding...' : 'Add Hours'}
                                                 </button>
-                                            </div>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
