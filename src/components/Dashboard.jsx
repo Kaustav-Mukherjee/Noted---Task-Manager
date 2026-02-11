@@ -858,7 +858,7 @@ function Dashboard({
 
             {/* Calendar Card - Interactive & Minimizable */}
             <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: isCalendarMinimized ? '0' : '12px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: isCalendarMinimized ? '0' : '12px', alignItems: 'center', transition: 'margin-bottom 0.3s ease' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <button onClick={handlePrevYear} style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
                             <ChevronDown size={14} style={{ transform: 'rotate(90deg)' }} />
@@ -915,9 +915,15 @@ function Dashboard({
                     </button>
                     <button
                         onClick={() => setIsCalendarMinimized(!isCalendarMinimized)}
-                        style={{ padding: '4px', borderRadius: '6px', color: 'var(--text-muted)' }}
+                        style={{ padding: '4px', borderRadius: '6px', color: 'var(--text-muted)', transition: 'transform 0.3s ease' }}
                     >
-                        {isCalendarMinimized ? <ChevronDown size={18} /> : <X size={18} style={{ transform: 'rotate(45deg)' }} />}
+                        <ChevronDown
+                            size={18}
+                            style={{
+                                transform: isCalendarMinimized ? 'rotate(0deg)' : 'rotate(180deg)',
+                                transition: 'transform 0.3s ease'
+                            }}
+                        />
                     </button>
                 </div>
                 <style>{`
@@ -1131,8 +1137,17 @@ function Dashboard({
                     </div>
                 )}
 
-                {!isCalendarMinimized && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', transition: 'all 0.3s ease' }}>
+                <div
+                    className="calendar-content-wrapper"
+                    style={{
+                        maxHeight: isCalendarMinimized ? '0' : '500px',
+                        opacity: isCalendarMinimized ? '0' : '1',
+                        overflow: 'hidden',
+                        transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease',
+                        transform: isCalendarMinimized ? 'translateY(-10px)' : 'translateY(0)',
+                    }}
+                >
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', paddingTop: isCalendarMinimized ? '0' : '0' }}>
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
                             <div key={i} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '600', padding: '4px 0', marginBottom: '4px' }}>{d}</div>
                         ))}
@@ -1177,7 +1192,7 @@ function Dashboard({
                             );
                         })}
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Date Detail Modal */}
