@@ -1,9 +1,30 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Bell, Clock, Plus, MapPin, Calendar, ChevronDown, Check, Edit2, Users, FileText, Video } from 'lucide-react';
-import { format, isSameDay, isAfter, isBefore, parseISO } from 'date-fns';
+import { format, isSameDay, isAfter, isBefore, parseISO, startOfDay } from 'date-fns';
 import { createCalendarEvent, buildCalendarEvent } from '../services/googleCalendarService';
 
-function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateReminder, googleToken }) {
+// Safe Date Utilities
+const parseSafeDate = (dateVal) => {
+    if (!dateVal) return null;
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? null : d;
+};
+
+const safeIsSameDay = (d1, d2) => {
+    const date1 = parseSafeDate(d1);
+    const date2 = parseSafeDate(d2);
+    if (!date1 || !date2) return false;
+    return isSameDay(date1, date2);
+};
+
+const safeIsAfter = (d1, d2) => {
+    const date1 = parseSafeDate(d1);
+    const date2 = parseSafeDate(d2);
+    if (!date1 || !date2) return false;
+    return isAfter(date1, date2);
+};
+
+function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateReminder, googleToken, googleEvents = [] }) {
     const [view, setView] = useState('today'); // 'today' | 'upcoming' | 'all'
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -25,20 +46,38 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
 
     const today = new Date();
 
-    // Filter reminders based on view
+    // Combine local reminders with Google Events
+    const combinedData = useMemo(() => {
+        const local = reminders.map(r => ({ ...r, source: 'local' }));
+        const remote = googleEvents.map(e => ({
+            id: e.id,
+            title: e.summary || '(No Title)',
+            dueDate: e.start?.dateTime || e.start?.date,
+            location: e.location,
+            description: e.description,
+            type: 'google_event',
+            source: 'google',
+            completed: false
+        }));
+        return [...local, ...remote];
+    }, [reminders, googleEvents]);
+
+    // Filter combined data based on view
     const filteredReminders = useMemo(() => {
-        return reminders.filter(rem => {
-            if (rem.completed && completingId !== rem.id) return false;
-            if (!rem.dueDate) return view === 'all';
-            const dueDate = new Date(rem.dueDate);
+        const today = startOfDay(new Date());
+
+        return combinedData.filter(item => {
+            if (item.completed && completingId !== item.id) return false;
+            if (!item.dueDate) return view === 'all';
+
             if (view === 'today') {
-                return isSameDay(dueDate, today);
+                return safeIsSameDay(item.dueDate, today);
             } else if (view === 'upcoming') {
-                return isAfter(dueDate, today);
+                return safeIsAfter(item.dueDate, today);
             }
             return true;
         });
-    }, [reminders, view, today, completingId]);
+    }, [combinedData, view, completingId]);
 
     const handleEdit = (rem) => {
         const [date, time] = rem.dueDate ? rem.dueDate.split('T') : [format(new Date(), 'yyyy-MM-dd'), '09:00'];
@@ -547,27 +586,26 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                         <div style={{ fontSize: '0.85rem', fontWeight: '500', transition: 'all 0.3s ease', textDecoration: rem.completed ? 'line-through' : 'none', color: rem.completed ? 'var(--text-muted)' : 'inherit' }}>{rem.title}</div>
                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                             <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                <Clock size={10} /> {rem.time}
+                                                <Clock size={10} /> {rem.source === 'google' ? (rem.dueDate?.includes('T') ? format(new Date(rem.dueDate), 'h:mm a') : 'All Day') : rem.time}
                                             </span>
                                             {rem.location && (
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                                                     <MapPin size={10} /> {rem.location}
                                                 </span>
                                             )}
-                                            {rem.type && rem.type !== 'reminder' && (
-                                                <span style={{
-                                                    fontSize: '0.6rem',
-                                                    padding: '1px 6px',
-                                                    borderRadius: '4px',
-                                                    backgroundColor: config.color,
-                                                    color: rem.type === 'reminder' ? 'var(--bg-app)' : 'white',
-                                                    fontWeight: '600'
-                                                }}>
-                                                    {config.label}
-                                                </span>
-                                            )}
-                                            {rem.googleCalendarEventId && (
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#4285F4' }}>
+                                            <span style={{
+                                                fontSize: '0.6rem',
+                                                padding: '1px 6px',
+                                                borderRadius: '4px',
+                                                backgroundColor: rem.type === 'google_event' ? 'rgba(66, 133, 244, 0.1)' : (config.color + '22'),
+                                                color: rem.type === 'google_event' ? '#4285F4' : config.color,
+                                                fontWeight: '600',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                {rem.type === 'meeting' ? 'Meeting' : rem.type === 'google_event' ? 'Google Event' : (config.label || 'Task')}
+                                            </span>
+                                            {(rem.source === 'google' || rem.googleCalendarEventId) && (
+                                                <span style={{ fontSize: '0.65rem', color: '#4285F4', display: 'flex', alignItems: 'center', gap: '3px' }}>
                                                     <Calendar size={10} /> Synced
                                                 </span>
                                             )}
@@ -604,61 +642,63 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                             )}
                                         </div>
                                     )}
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleEdit(rem); }}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px',
-                                                borderRadius: '6px',
-                                                backgroundColor: 'var(--bg-hover)',
-                                                fontSize: '0.7rem',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '4px',
-                                                transition: 'all 0.2s ease'
-                                            }}
-                                            onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.2)'}
-                                            onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
-                                        >
-                                            <Edit2 size={12} /> Edit
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onDeleteReminder(rem.id); }}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px',
-                                                borderRadius: '6px',
-                                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                                color: '#ef4444',
-                                                fontSize: '0.7rem',
-                                                transition: 'all 0.2s ease'
-                                            }}
-                                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
-                                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                                        >
-                                            Delete
-                                        </button>
-                                        {!rem.completed && (
+                                    {rem.source === 'local' && (
+                                        <div style={{ display: 'flex', gap: '8px' }}>
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); handleComplete(rem.id); }}
+                                                onClick={(e) => { e.stopPropagation(); handleEdit(rem); }}
                                                 style={{
                                                     flex: 1,
                                                     padding: '8px',
                                                     borderRadius: '6px',
-                                                    backgroundColor: '#22c55e',
-                                                    color: 'white',
+                                                    backgroundColor: 'var(--bg-hover)',
+                                                    fontSize: '0.7rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '4px',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.2)'}
+                                                onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
+                                            >
+                                                <Edit2 size={12} /> Edit
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onDeleteReminder(rem.id); }}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '8px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                                    color: '#ef4444',
                                                     fontSize: '0.7rem',
                                                     transition: 'all 0.2s ease'
                                                 }}
-                                                onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                                                onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
+                                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
+                                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
                                             >
-                                                Complete
+                                                Delete
                                             </button>
-                                        )}
-                                    </div>
+                                            {!rem.completed && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleComplete(rem.id); }}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        backgroundColor: '#22c55e',
+                                                        color: 'white',
+                                                        fontSize: '0.7rem',
+                                                        transition: 'all 0.2s ease'
+                                                    }}
+                                                    onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                                                    onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
+                                                >
+                                                    Complete
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );

@@ -908,220 +908,244 @@ function Dashboard({
                         </div>
 
                         <div style={{ maxHeight: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '4px' }}>
-                            {/* Retroactive Action Section */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: 'var(--bg-input)', borderRadius: '12px' }}>
-                                <h5 style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Add to this Day</h5>
-                                <form onSubmit={handleAddRetroTask} style={{ display: 'flex', gap: '8px' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Add retroactive task..."
-                                        value={retroTask}
-                                        onChange={(e) => setRetroTask(e.target.value)}
-                                        style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', fontSize: '0.75rem' }}
-                                    />
-                                    <button type="submit" disabled={isSubmittingRetro} style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'var(--text-main)', color: 'var(--bg-app)', fontSize: '0.75rem', fontWeight: '700' }}>Add</button>
-                                </form>
-                                <form onSubmit={handleAddRetroStudy} style={{ display: 'flex', gap: '8px' }}>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        placeholder="Add study hours..."
-                                        value={retroStudy}
-                                        onChange={(e) => setRetroStudy(e.target.value)}
-                                        style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', fontSize: '0.75rem' }}
-                                    />
-                                    <button type="submit" disabled={isSubmittingRetro} style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: '#3b82f6', color: 'white', fontSize: '0.75rem', fontWeight: '700' }}>Add Hrs</button>
-                                </form>
-                            </div>
-
-                            {/* Existing Records Section */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {selectedDateData.tasks && selectedDateData.tasks.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {/* Records Section */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {/* Tasks Section */}
                                     <div>
-                                        <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>Tasks</h5>
-                                        {selectedDateData.tasks.map(t => (
-                                            <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '4px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.completed ? '#22c55e' : '#888' }}></div>
-                                                    <span style={{ textDecoration: t.completed ? 'line-through' : 'none', color: t.completed ? 'var(--text-muted)' : 'var(--text-main)' }}>{t.text}</span>
-                                                </div>
-                                                <button onClick={() => onDeleteTask && onDeleteTask(t.id)} style={{ color: '#ef4444', padding: '4px' }}><Trash2 size={12} /></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {studySessions.filter(s => safeIsSameDay(s.date, selectedDateData.date)).length > 0 && (
-                                    <div>
-                                        <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>Study Sessions</h5>
-                                        {studySessions.filter(s => safeIsSameDay(s.date, selectedDateData.date)).map(s => (
-                                            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '4px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <BookOpen size={12} color="#3b82f6" />
-                                                    <span>{s.hours} hours</span>
-                                                </div>
-                                                <button onClick={() => onDeleteStudySession && onDeleteStudySession(s.id)} style={{ color: '#ef4444', padding: '4px' }}><Trash2 size={12} /></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {selectedDateData.reminders.length > 0 && (
-                                    <div>
-                                        <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>Reminders</h5>
-                                        {selectedDateData.reminders.map(r => (
-                                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '4px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <Bell size={12} color="#f59e0b" />
-                                                    <span style={{ textDecoration: r.completed ? 'line-through' : 'none' }}>{r.title}</span>
-                                                </div>
-                                                <button onClick={() => onDeleteReminder && onDeleteReminder(r.id)} style={{ color: '#ef4444', padding: '4px' }}><Trash2 size={12} /></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {selectedDateData.googleEvents && selectedDateData.googleEvents.length > 0 && (
-                                    <div>
-                                        <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <CalendarIcon size={12} /> Google Calendar
+                                        <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <Bell size={12} color="#f59e0b" /> Tasks
                                         </h5>
-                                        {selectedDateData.googleEvents.map(e => (
-                                            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '4px', borderLeft: '3px solid #4285F4' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: '500' }}>{e.summary}</div>
-                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                                                        {e.start?.dateTime ? safeFormat(e.start.dateTime, 'p') : 'All Day'}
+                                        {selectedDateData.tasks.length === 0 ? (
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', padding: '10px', backgroundColor: 'var(--bg-input)', borderRadius: '8px' }}>No tasks for this day</p>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                {selectedDateData.tasks.map(t => (
+                                                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                                                        <span style={{ flex: 1, textDecoration: t.completed ? 'line-through' : 'none', color: t.completed ? 'var(--text-muted)' : 'var(--text-main)' }}>{t.text}</span>
+                                                        <button onClick={() => onDeleteTask(t.id)} style={{ color: '#ef4444', padding: '4px' }}><Trash2 size={12} /></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Study Sessions Section */}
+                                    <div>
+                                        <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <BookOpen size={12} color="#3b82f6" /> Study Sessions
+                                        </h5>
+                                        {studySessions.filter(s => safeIsSameDay(s.date, selectedDateData.date)).length === 0 ? (
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', padding: '10px', backgroundColor: 'var(--bg-input)', borderRadius: '8px' }}>No sessions recorded</p>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                {studySessions.filter(s => safeIsSameDay(s.date, selectedDateData.date)).map(s => (
+                                                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <Clock size={12} color="#3b82f6" />
+                                                            <span>{s.hours} hours</span>
+                                                        </div>
+                                                        <button onClick={() => onDeleteStudySession && onDeleteStudySession(s.id)} style={{ color: '#ef4444', padding: '4px' }}><Trash2 size={12} /></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Google Events Section */}
+                                    {selectedDateData.googleEvents && selectedDateData.googleEvents.length > 0 && (
+                                        <div>
+                                            <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <CalendarIcon size={12} color="#4285F4" /> Google Calendar
+                                            </h5>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                {selectedDateData.googleEvents.map(e => (
+                                                    <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', borderLeft: '3px solid #4285F4' }}>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontWeight: '500' }}>{e.summary}</div>
+                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                                                {e.start?.dateTime ? safeFormat(e.start.dateTime, 'p') : 'All Day'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Add Retroactive Data Form */}
+                                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '8px' }}>
+                                        <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '12px' }}>Add Historical Data</h5>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Task description..."
+                                                    value={retroTask}
+                                                    onChange={(e) => setRetroTask(e.target.value)}
+                                                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        if (!retroTask.trim()) return;
+                                                        onAddTask(retroTask, selectedDateData.date);
+                                                        setRetroTask('');
+                                                    }}
+                                                    style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'var(--text-main)', color: 'var(--bg-app)', fontWeight: '600', fontSize: '0.75rem' }}
+                                                >
+                                                    Add Task
+                                                </button>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Study hours..."
+                                                    value={retroStudy}
+                                                    onChange={(e) => setRetroStudy(e.target.value)}
+                                                    step="0.1"
+                                                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        if (!retroStudy || isNaN(parseFloat(retroStudy))) return;
+                                                        addStudySession(parseFloat(retroStudy), selectedDateData.date);
+                                                        setRetroStudy('');
+                                                    }}
+                                                    style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: '#3b82f6', color: 'white', fontWeight: '600', fontSize: '0.75rem' }}
+                                                >
+                                                    Add Hours
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Add Google Event Section */}
+                                {googleToken && (
+                                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '10px' }}>
+                                        <h4 style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <CalendarIcon size={14} color="#4285F4" /> Add to Google Calendar
+                                        </h4>
+                                        <form onSubmit={handleCreateGoogleEvent} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-input)', padding: '3px', borderRadius: '8px' }}>
+                                                {[{ key: 'event', label: 'Event', color: '#4285F4' }, { key: 'meeting', label: 'Meeting', color: '#34A853' }].map(t => (
+                                                    <button
+                                                        key={t.key}
+                                                        type="button"
+                                                        onClick={() => setNewEventType(t.key)}
+                                                        style={{
+                                                            flex: 1, padding: '5px', borderRadius: '6px', fontSize: '0.7rem',
+                                                            fontWeight: newEventType === t.key ? '600' : '400',
+                                                            backgroundColor: newEventType === t.key ? t.color : 'transparent',
+                                                            color: newEventType === t.key ? 'white' : 'var(--text-muted)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                    >
+                                                        {t.key === 'meeting' ? <Video size={10} /> : <CalendarIcon size={10} />}
+                                                        {t.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <input
+                                                type="text"
+                                                placeholder={newEventType === 'meeting' ? 'Meeting Title' : 'Event Title'}
+                                                value={newEventTitle}
+                                                onChange={(e) => setNewEventTitle(e.target.value)}
+                                                style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
+                                                required
+                                            />
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>Event Date</label>
+                                                <div style={{ position: 'relative' }}>
+                                                    <CalendarIcon size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                    <input
+                                                        type="date"
+                                                        value={newEventDate || safeFormat(selectedDateData.date, 'yyyy-MM-dd')}
+                                                        onChange={(e) => setNewEventDate(e.target.value)}
+                                                        style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>Start Time</label>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <Clock size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                        <input
+                                                            type="time"
+                                                            value={newEventTime}
+                                                            onChange={(e) => setNewEventTime(e.target.value)}
+                                                            style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>End Time</label>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <Clock size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                        <input
+                                                            type="time"
+                                                            value={newEventEndTime}
+                                                            onChange={(e) => setNewEventEndTime(e.target.value)}
+                                                            style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
+
+                                            <div style={{ position: 'relative' }}>
+                                                <MapPin size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Location (optional)"
+                                                    value={newEventLocation}
+                                                    onChange={(e) => setNewEventLocation(e.target.value)}
+                                                    style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                                                />
+                                            </div>
+
+                                            <textarea
+                                                placeholder="Description (optional)"
+                                                value={newEventDescription}
+                                                onChange={(e) => setNewEventDescription(e.target.value)}
+                                                rows={2}
+                                                style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', resize: 'none' }}
+                                            />
+
+                                            {newEventType === 'meeting' && (
+                                                <input
+                                                    type="text"
+                                                    placeholder="Attendees (comma-separated)"
+                                                    value={newEventAttendees}
+                                                    onChange={(e) => setNewEventAttendees(e.target.value)}
+                                                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                                                />
+                                            )}
+
+                                            <button
+                                                type="submit"
+                                                disabled={isCreatingEvent}
+                                                style={{
+                                                    padding: '10px',
+                                                    borderRadius: '8px',
+                                                    backgroundColor: newEventType === 'meeting' ? '#34A853' : '#4285F4',
+                                                    color: 'white',
+                                                    fontWeight: '600',
+                                                    fontSize: '0.8rem',
+                                                    opacity: isCreatingEvent ? 0.7 : 1,
+                                                    cursor: isCreatingEvent ? 'not-allowed' : 'pointer'
+                                                }}
+                                            >
+                                                {isCreatingEvent ? 'Adding...' : newEventType === 'meeting' ? 'Schedule Meeting' : 'Add Event'}
+                                            </button>
+                                        </form>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Add Google Event Section */}
-                            {googleToken && (
-                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                                    <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>Add to Google Calendar</h5>
-                                    <form onSubmit={handleCreateGoogleEvent} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-input)', padding: '3px', borderRadius: '8px' }}>
-                                            {[{ key: 'event', label: 'Event', color: '#4285F4' }, { key: 'meeting', label: 'Meeting', color: '#34A853' }].map(t => (
-                                                <button
-                                                    key={t.key}
-                                                    type="button"
-                                                    onClick={() => setNewEventType(t.key)}
-                                                    style={{
-                                                        flex: 1, padding: '5px', borderRadius: '6px', fontSize: '0.7rem',
-                                                        fontWeight: newEventType === t.key ? '600' : '400',
-                                                        backgroundColor: newEventType === t.key ? t.color : 'transparent',
-                                                        color: newEventType === t.key ? 'white' : 'var(--text-muted)',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-                                                        transition: 'all 0.2s ease'
-                                                    }}
-                                                >
-                                                    {t.key === 'meeting' ? <Video size={10} /> : <CalendarIcon size={10} />}
-                                                    {t.label}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <input
-                                            type="text"
-                                            placeholder={newEventType === 'meeting' ? 'Meeting Title' : 'Event Title'}
-                                            value={newEventTitle}
-                                            onChange={(e) => setNewEventTitle(e.target.value)}
-                                            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
-                                            required
-                                        />
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>Event Date</label>
-                                            <div style={{ position: 'relative' }}>
-                                                <CalendarIcon size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                                <input
-                                                    type="date"
-                                                    value={newEventDate || safeFormat(selectedDateData.date, 'yyyy-MM-dd')}
-                                                    onChange={(e) => setNewEventDate(e.target.value)}
-                                                    style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>Start Time</label>
-                                                <div style={{ position: 'relative' }}>
-                                                    <Clock size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                                    <input
-                                                        type="time"
-                                                        value={newEventTime}
-                                                        onChange={(e) => setNewEventTime(e.target.value)}
-                                                        style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>End Time</label>
-                                                <div style={{ position: 'relative' }}>
-                                                    <Clock size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                                    <input
-                                                        type="time"
-                                                        value={newEventEndTime}
-                                                        onChange={(e) => setNewEventEndTime(e.target.value)}
-                                                        style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div style={{ position: 'relative' }}>
-                                            <MapPin size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                            <input
-                                                type="text"
-                                                placeholder="Location (optional)"
-                                                value={newEventLocation}
-                                                onChange={(e) => setNewEventLocation(e.target.value)}
-                                                style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
-                                            />
-                                        </div>
-
-                                        <textarea
-                                            placeholder="Description (optional)"
-                                            value={newEventDescription}
-                                            onChange={(e) => setNewEventDescription(e.target.value)}
-                                            rows={2}
-                                            style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', resize: 'none' }}
-                                        />
-
-                                        {newEventType === 'meeting' && (
-                                            <input
-                                                type="text"
-                                                placeholder="Attendees (comma-separated)"
-                                                value={newEventAttendees}
-                                                onChange={(e) => setNewEventAttendees(e.target.value)}
-                                                style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
-                                            />
-                                        )}
-
-                                        <button
-                                            type="submit"
-                                            disabled={isCreatingEvent}
-                                            style={{
-                                                padding: '10px',
-                                                borderRadius: '8px',
-                                                backgroundColor: newEventType === 'meeting' ? '#34A853' : '#4285F4',
-                                                color: 'white',
-                                                fontWeight: '600',
-                                                fontSize: '0.8rem',
-                                                opacity: isCreatingEvent ? 0.7 : 1,
-                                                cursor: isCreatingEvent ? 'not-allowed' : 'pointer'
-                                            }}
-                                        >
-                                            {isCreatingEvent ? 'Adding...' : newEventType === 'meeting' ? 'Schedule Meeting' : 'Add Event'}
-                                        </button>
-                                    </form>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -1133,6 +1157,7 @@ function Dashboard({
                 onDeleteReminder={onDeleteReminder}
                 onUpdateReminder={onUpdateReminder}
                 googleToken={googleToken}
+                googleEvents={googleEvents}
             />
 
             <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)' }}>
@@ -1146,6 +1171,16 @@ function Dashboard({
                     onUpdateFolder={onUpdateFolder}
                     onDeleteFolder={onDeleteFolder}
                 />
+            </div>
+
+            <div style={{
+                padding: '16px',
+                textAlign: 'center',
+                opacity: 0.3,
+                fontSize: '0.6rem',
+                color: 'var(--text-muted)'
+            }}>
+                Noted v1.0.1
             </div>
         </div>
     );
