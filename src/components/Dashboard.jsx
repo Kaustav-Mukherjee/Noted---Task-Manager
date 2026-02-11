@@ -594,48 +594,7 @@ function Dashboard({
                 transition: 'all var(--transition-main)',
                 position: 'relative'
             }}>
-                {/* Edge-only Gradient Glow Effect for Goal Completion */}
-                {goalCompleted && (
-                    <div style={{
-                        position: 'absolute',
-                        inset: '-4px',
-                        borderRadius: 'calc(var(--radius) + 4px)',
-                        padding: '3px',
-                        background: 'conic-gradient(from 0deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
-                        opacity: 0,
-                        animation: 'edgeGlowIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, edgeRotate 3s linear 0.5s forwards',
-                        filter: 'blur(2px)',
-                        pointerEvents: 'none',
-                        zIndex: -1
-                    }}>
-                        <div style={{
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'var(--bg-card)',
-                            borderRadius: 'var(--radius)'
-                        }} />
-                        <style>{`
-                            @keyframes edgeGlowIn {
-                                0% { opacity: 0; transform: scale(0.95); }
-                                100% { opacity: 0.9; transform: scale(1); }
-                            }
-                            @keyframes edgeRotate {
-                                0% { 
-                                    opacity: 0.9; 
-                                    filter: blur(2px);
-                                }
-                                50% { 
-                                    opacity: 0.6; 
-                                    filter: blur(3px);
-                                }
-                                100% { 
-                                    opacity: 0.4; 
-                                    filter: blur(4px);
-                                }
-                            }
-                        `}</style>
-                    </div>
-                )}
+
 
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
@@ -711,14 +670,30 @@ function Dashboard({
                             {todayStudyHours.toFixed(1)} / {dailyGoalHours}h
                         </span>
                     </div>
-                    <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-hover)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{
-                            width: `${goalProgress}%`,
-                            height: '100%',
-                            backgroundColor: 'var(--text-main)',
-                            borderRadius: '3px',
-                            transition: 'width 0.8s var(--ease-apple)'
-                        }}></div>
+                    <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-hover)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+                        <div
+                            style={{
+                                width: `${goalProgress}%`,
+                                height: '100%',
+                                backgroundColor: 'var(--text-main)',
+                                borderRadius: '3px',
+                                transition: 'width 0.8s var(--ease-apple)',
+                                boxShadow: goalCompleted ? '0 0 10px 2px rgba(59, 130, 246, 0.6)' : 'none',
+                                animation: goalCompleted ? 'sliderPulse 1.5s ease-in-out 2' : 'none'
+                            }}
+                        />
+                        {goalCompleted && (
+                            <style>{`
+                                @keyframes sliderPulse {
+                                    0%, 100% {
+                                        box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.6);
+                                    }
+                                    50% {
+                                        box-shadow: 0 0 20px 6px rgba(59, 130, 246, 0.9);
+                                    }
+                                }
+                            `}</style>
+                        )}
                     </div>
 
                 </div>
