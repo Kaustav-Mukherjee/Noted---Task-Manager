@@ -63,14 +63,16 @@ function Dashboard({
             return [{
                 name: 'Today',
                 total: todayTasks.length,
-                completed: todayTasks.filter(t => t.completed).length
+                completed: todayTasks.filter(t => t.completed).length,
+                remaining: todayTasks.length - todayTasks.filter(t => t.completed).length
             }];
         } else if (timeRange === 'Week') {
             const last7Days = eachDayOfInterval({ start: subDays(today, 6), end: today });
             return last7Days.map(day => ({
                 name: format(day, 'EEE'),
                 total: tasks.filter(t => isSameDay(new Date(t.date), day)).length,
-                completed: tasks.filter(t => isSameDay(new Date(t.date), day) && t.completed).length
+                completed: tasks.filter(t => isSameDay(new Date(t.date), day) && t.completed).length,
+                remaining: tasks.filter(t => isSameDay(new Date(t.date), day)).length - tasks.filter(t => isSameDay(new Date(t.date), day) && t.completed).length
             }));
         } else if (timeRange === 'Month') {
             const start = startOfMonth(today);
@@ -84,6 +86,7 @@ function Dashboard({
                     name: labelDays.includes(dayNum) ? format(day, 'd') : '',
                     total: tasks.filter(t => isSameDay(new Date(t.date), day)).length,
                     completed: tasks.filter(t => isSameDay(new Date(t.date), day) && t.completed).length,
+                    remaining: tasks.filter(t => isSameDay(new Date(t.date), day)).length - tasks.filter(t => isSameDay(new Date(t.date), day) && t.completed).length,
                     showLabel: labelDays.includes(dayNum)
                 };
             });
@@ -99,7 +102,8 @@ function Dashboard({
                 return {
                     name: format(month, 'MMM'),
                     total: monthTasks.length,
-                    completed: monthTasks.filter(t => t.completed).length
+                    completed: monthTasks.filter(t => t.completed).length,
+                    remaining: monthTasks.length - monthTasks.filter(t => t.completed).length
                 };
             });
         }
@@ -361,8 +365,8 @@ function Dashboard({
                                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
                                 dy={5}
                             />
-                            <Bar dataKey="total" stackId="a" fill="var(--text-muted)" opacity={0.4} radius={[0, 0, 3, 3]} barSize={20} />
-                            <Bar dataKey="completed" stackId="a" fill="var(--text-main)" radius={[3, 3, 0, 0]} barSize={20} />
+                            <Bar dataKey="completed" stackId="a" fill="var(--text-main)" radius={[0, 0, 3, 3]} barSize={8} />
+                            <Bar dataKey="remaining" stackId="a" fill="var(--text-muted)" opacity={0.2} radius={[3, 3, 0, 0]} barSize={8} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
