@@ -151,14 +151,27 @@ function Dashboard({
 
     // Study Hours Graph with Time Ranges
     const studyGraphData = useMemo(() => {
+        // Helper to normalize dates for comparison
+        const normalizeDate = (dateVal) => {
+            if (!dateVal) return null;
+            const d = new Date(dateVal);
+            return isNaN(d.getTime()) ? null : d;
+        };
+
         if (studyTimeRange === 'Today') {
-            const todaySessions = studySessions.filter(s => isSameDay(new Date(s.date), today));
+            const todaySessions = studySessions.filter(s => {
+                const sessionDate = normalizeDate(s.date);
+                return sessionDate && isSameDay(sessionDate, today);
+            });
             const totalHours = todaySessions.reduce((acc, curr) => acc + curr.hours, 0);
             return [{ name: 'Today', hours: totalHours }];
         } else if (studyTimeRange === 'Week') {
             const last7Days = eachDayOfInterval({ start: subDays(today, 6), end: today });
             return last7Days.map(day => {
-                const sessionsThisDay = studySessions.filter(s => safeIsSameDay(s.date, day));
+                const sessionsThisDay = studySessions.filter(s => {
+                    const sessionDate = normalizeDate(s.date);
+                    return sessionDate && isSameDay(sessionDate, day);
+                });
                 return {
                     name: format(day, 'EEE'),
                     hours: sessionsThisDay.reduce((acc, curr) => acc + curr.hours, 0)
@@ -172,9 +185,8 @@ function Dashboard({
             return days.map((day, i) => {
                 const dayNum = i + 1;
                 const sessionsThisDay = studySessions.filter(s => {
-                    if (!s.date) return false;
-                    const d = new Date(s.date);
-                    return !isNaN(d.getTime()) && isSameDay(d, day);
+                    const sessionDate = normalizeDate(s.date);
+                    return sessionDate && isSameDay(sessionDate, day);
                 });
                 return {
                     name: labelDays.includes(dayNum) ? format(day, 'd') : '',
@@ -186,8 +198,9 @@ function Dashboard({
             const last12Months = eachMonthOfInterval({ start: subMonths(today, 11), end: today });
             return last12Months.map(month => {
                 const monthSessions = studySessions.filter(s => {
-                    const d = new Date(s.date);
-                    return d.getMonth() === month.getMonth() && d.getFullYear() === month.getFullYear();
+                    const sessionDate = normalizeDate(s.date);
+                    if (!sessionDate) return false;
+                    return sessionDate.getMonth() === month.getMonth() && sessionDate.getFullYear() === month.getFullYear();
                 });
                 return {
                     name: format(month, 'MMM'),

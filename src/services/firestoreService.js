@@ -105,11 +105,31 @@ export const deleteStudySession = async (userId, sessionId) => {
 export const subscribeStudySessions = (userId, callback) => {
     const q = query(studySessionsCollection(userId), orderBy('createdAt', 'desc'));
     return onSnapshot(q, (snapshot) => {
-        const sessions = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            date: doc.data().date || doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
-        }));
+        const sessions = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Handle Firestore Timestamp or string dates
+            let sessionDate;
+            if (data.date) {
+                // Check if it's a Firestore Timestamp object
+                if (data.date.toDate) {
+                    sessionDate = data.date.toDate().toISOString();
+                } else if (typeof data.date === 'string') {
+                    sessionDate = data.date;
+                } else {
+                    sessionDate = new Date(data.date).toISOString();
+                }
+            } else if (data.createdAt?.toDate) {
+                sessionDate = data.createdAt.toDate().toISOString();
+            } else {
+                sessionDate = new Date().toISOString();
+            }
+            
+            return {
+                id: doc.id,
+                ...data,
+                date: sessionDate
+            };
+        });
         callback(sessions);
     });
 };
