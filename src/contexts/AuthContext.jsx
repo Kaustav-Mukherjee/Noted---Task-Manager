@@ -16,11 +16,17 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [googleToken, setGoogleToken] = useState(localStorage.getItem('google_access_token'));
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user);
             setLoading(false);
+            // Clear token if user signs out
+            if (!user) {
+                setGoogleToken(null);
+                localStorage.removeItem('google_access_token');
+            }
         });
 
         return () => unsubscribe();
@@ -32,10 +38,37 @@ export function AuthProvider({ children }) {
             const result = await signInWithPopup(auth, googleProvider);
             const credential = GoogleAuthProvider.credentialFromResult(result);
             const token = credential?.accessToken;
+            if (token) {
+                setGoogleToken(token);
+                localStorage.setItem('google_access_token', token);
+            }
             return { user: result.user, token, error: null };
         } catch (error) {
             return { user: null, token: null, error: error.message };
         }
+    };
+
+    // Re-authenticate to get fresh token
+    const refreshGoogleToken = async () => {
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const token = credential?.accessToken;
+            if (token) {
+                setGoogleToken(token);
+                localStorage.setItem('google_access_token', token);
+            }
+            return token;
+        } catch (error) {
+            console.error('Failed to refresh Google token:', error);
+            return null;
+        }
+    };
+
+    // Clear google token (for expired/invalid tokens)
+    const clearGoogleToken = () => {
+        setGoogleToken(null);
+        localStorage.removeItem('google_access_token');
     };
 
     // Email/Password Sign In
@@ -61,6 +94,7 @@ export function AuthProvider({ children }) {
     // Sign Out
     const logout = async () => {
         try {
+            clearGoogleToken();
             await signOut(auth);
             return { error: null };
         } catch (error) {
@@ -71,6 +105,10 @@ export function AuthProvider({ children }) {
     const value = {
         user,
         loading,
+        googleToken,
+        setGoogleToken,
+        clearGoogleToken,
+        refreshGoogleToken,
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,

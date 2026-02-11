@@ -1,12 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
-import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown, Calendar as CalendarIcon, RefreshCw, Link } from 'lucide-react';
+import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown, Calendar as CalendarIcon, RefreshCw, Link, MapPin, FileText, Users, Video, Clock } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, isSameDay, isSameMonth, subDays, subMonths, addMonths } from 'date-fns';
 import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
 import QuotesSection from './QuotesSection';
 import { useAuth } from '../contexts/AuthContext';
-import { getCalendarEvents, createCalendarEvent } from '../services/googleCalendarService';
+import { getCalendarEvents, buildCalendarEvent, isApiNotEnabledError, isAuthError } from '../services/googleCalendarService';
 
 import { Goal } from 'lucide-react';
 
@@ -35,12 +35,17 @@ function Dashboard({
     // Google Calendar State
     const [googleEvents, setGoogleEvents] = useState([]);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [googleToken, setGoogleToken] = useState(localStorage.getItem('google_access_token'));
-    const { signInWithGoogle, user } = useAuth();
+    const { signInWithGoogle, user, googleToken, setGoogleToken, clearGoogleToken, refreshGoogleToken } = useAuth();
+    const syncIntervalRef = useRef(null);
 
     // Event Creation State
     const [newEventTitle, setNewEventTitle] = useState('');
     const [newEventTime, setNewEventTime] = useState('');
+    const [newEventEndTime, setNewEventEndTime] = useState('');
+    const [newEventLocation, setNewEventLocation] = useState('');
+    const [newEventDescription, setNewEventDescription] = useState('');
+    const [newEventAttendees, setNewEventAttendees] = useState('');
+    const [newEventType, setNewEventType] = useState('event');
     const [isCreatingEvent, setIsCreatingEvent] = useState(false);
 
     const today = new Date();
@@ -175,16 +180,14 @@ function Dashboard({
         try {
             const start = startOfMonth(subMonths(currentMonth, 1));
             const end = endOfMonth(addMonths(currentMonth, 1));
-            console.log('Fetching Google Events for range:', start, end);
             const events = await getCalendarEvents(token, start, end);
-            console.log('Fetched Google Events:', events);
             setGoogleEvents(events);
         } catch (error) {
             console.error("Failed to sync calendar", error);
-            // Handle token expiration or revocation
-            if (error?.status === 401 || error?.code === 401 || error?.message?.includes('401') || error?.message?.includes('Invalid Credentials')) {
-                setGoogleToken(null);
-                localStorage.removeItem('google_access_token');
+            if (isAuthError(error)) {
+                clearGoogleToken();
+            } else if (isApiNotEnabledError(error)) {
+                alert('Google Calendar API is not enabled for this project. Please enable it at:\nhttps://console.developers.google.com/apis/api/calendar-json.googleapis.com/overview?project=932826658010');
             }
         } finally {
             setIsSyncing(false);
@@ -197,18 +200,29 @@ function Dashboard({
         } else {
             const result = await signInWithGoogle();
             if (result.token) {
-                setGoogleToken(result.token);
-                localStorage.setItem('google_access_token', result.token);
                 fetchGoogleEvents(result.token);
             }
         }
     };
 
+    // Auto-sync on mount and when month/token changes
     useEffect(() => {
         if (googleToken) {
             fetchGoogleEvents(googleToken);
         }
     }, [currentMonth, googleToken]);
+
+    // Auto-sync every 5 minutes
+    useEffect(() => {
+        if (googleToken) {
+            syncIntervalRef.current = setInterval(() => {
+                fetchGoogleEvents(googleToken);
+            }, 5 * 60 * 1000);
+        }
+        return () => {
+            if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
+        };
+    }, [googleToken]);
 
 
     // Calendar logic based on current month
@@ -245,28 +259,62 @@ function Dashboard({
         setIsCreatingEvent(true);
         try {
             const dateStr = format(selectedDateData.date, 'yyyy-MM-dd');
-            const startDateTime = newEventTime ? new Date(`${dateStr}T${newEventTime}:00`) : new Date(dateStr);
-            const endDateTime = newEventTime ? new Date(startDateTime.getTime() + 60 * 60 * 1000) : new Date(dateStr); // Default 1 hour duration
+            const isMeeting = newEventType === 'meeting';
+            const attendeesList = newEventAttendees ? newEventAttendees.split(',').map(e => e.trim()) : [];
 
-            const event = {
-                summary: newEventTitle,
-                start: newEventTime ? { dateTime: startDateTime.toISOString() } : { date: dateStr },
-                end: newEventTime ? { dateTime: endDateTime.toISOString() } : { date: dateStr }
-            };
+            const event = buildCalendarEvent({
+                title: newEventTitle,
+                date: dateStr,
+                startTime: newEventTime || null,
+                endTime: newEventEndTime || null,
+                location: newEventLocation,
+                description: newEventDescription,
+                attendees: attendeesList,
+                isMeeting
+            });
 
-            await createCalendarEvent(googleToken, event);
+            const conferenceParam = isMeeting ? '?conferenceDataVersion=1' : '';
+            const response = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/primary/events${conferenceParam}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${googleToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(event)
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const err = new Error(errorData.error?.message || 'Failed to create event');
+                err.status = response.status;
+                err.code = errorData.error?.code;
+                throw err;
+            }
+
+            const created = await response.json();
             await fetchGoogleEvents(googleToken);
             setNewEventTitle('');
             setNewEventTime('');
+            setNewEventEndTime('');
+            setNewEventLocation('');
+            setNewEventDescription('');
+            setNewEventAttendees('');
+            setNewEventType('event');
             setShowDateModal(false);
-            alert('Event added to Google Calendar!');
+
+            let msg = 'Event added to Google Calendar!';
+            if (created.hangoutLink) msg += `\nGoogle Meet: ${created.hangoutLink}`;
+            alert(msg);
         } catch (error) {
             console.error('Failed to create event:', error);
-            // Check if token is expired or invalid
-            if (error.status === 401 || error.code === 401 || error.message?.includes('401') || error.message?.includes('Invalid Credentials')) {
-                setGoogleToken(null);
-                localStorage.removeItem('google_access_token');
+            if (isAuthError(error)) {
+                clearGoogleToken();
                 alert('Your Google Calendar session has expired. Please click "Sync Calendar" to re-authenticate.');
+            } else if (isApiNotEnabledError(error)) {
+                alert('Google Calendar API is not enabled. Please enable it in the Google Cloud Console.');
             } else {
                 alert(`Failed to create event: ${error.message || 'Unknown error'}`);
             }
@@ -839,41 +887,120 @@ function Dashboard({
                             <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
                                 <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>Add to Google Calendar</h5>
                                 <form onSubmit={handleCreateGoogleEvent} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {/* Type Toggle */}
+                                    <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-input)', padding: '3px', borderRadius: '8px' }}>
+                                        {[{ key: 'event', label: 'Event', color: '#4285F4' }, { key: 'meeting', label: 'Meeting', color: '#34A853' }].map(t => (
+                                            <button
+                                                key={t.key}
+                                                type="button"
+                                                onClick={() => setNewEventType(t.key)}
+                                                style={{
+                                                    flex: 1, padding: '5px', borderRadius: '6px', fontSize: '0.7rem',
+                                                    fontWeight: newEventType === t.key ? '600' : '400',
+                                                    backgroundColor: newEventType === t.key ? t.color : 'transparent',
+                                                    color: newEventType === t.key ? 'white' : 'var(--text-muted)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                {t.key === 'meeting' ? <Video size={10} /> : <CalendarIcon size={10} />}
+                                                {t.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
                                     <input
                                         type="text"
-                                        placeholder="Event Title"
+                                        placeholder={newEventType === 'meeting' ? 'Meeting Title' : 'Event Title'}
                                         value={newEventTitle}
                                         onChange={(e) => setNewEventTitle(e.target.value)}
                                         style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
                                         required
                                     />
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input
-                                            type="time"
-                                            value={newEventTime}
-                                            onChange={(e) => setNewEventTime(e.target.value)}
-                                            style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
-                                        />
-                                        <button
-                                            type="submit"
-                                            disabled={isCreatingEvent}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px',
-                                                borderRadius: '8px',
-                                                backgroundColor: '#4285F4',
-                                                color: 'white',
-                                                fontWeight: '600',
-                                                fontSize: '0.8rem',
-                                                opacity: isCreatingEvent ? 0.7 : 1,
-                                                cursor: isCreatingEvent ? 'not-allowed' : 'pointer',
-                                                border: 'none',
-                                                transition: 'opacity 0.2s'
-                                            }}
-                                        >
-                                            {isCreatingEvent ? 'Adding...' : 'Add Event'}
-                                        </button>
+                                        <div style={{ flex: 1, position: 'relative' }}>
+                                            <Clock size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                            <input
+                                                type="time"
+                                                value={newEventTime}
+                                                onChange={(e) => setNewEventTime(e.target.value)}
+                                                style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
+                                                placeholder="Start"
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, position: 'relative' }}>
+                                            <Clock size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                            <input
+                                                type="time"
+                                                value={newEventEndTime}
+                                                onChange={(e) => setNewEventEndTime(e.target.value)}
+                                                style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
+                                                placeholder="End"
+                                            />
+                                        </div>
                                     </div>
+
+                                    {/* Location */}
+                                    <div style={{ position: 'relative' }}>
+                                        <MapPin size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                        <input
+                                            type="text"
+                                            placeholder="Location (optional)"
+                                            value={newEventLocation}
+                                            onChange={(e) => setNewEventLocation(e.target.value)}
+                                            style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                                        />
+                                    </div>
+
+                                    {/* Description */}
+                                    <div style={{ position: 'relative' }}>
+                                        <FileText size={12} style={{ position: 'absolute', left: '8px', top: '10px', color: 'var(--text-muted)' }} />
+                                        <textarea
+                                            placeholder="Description (optional)"
+                                            value={newEventDescription}
+                                            onChange={(e) => setNewEventDescription(e.target.value)}
+                                            rows={2}
+                                            style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', resize: 'none', fontFamily: 'inherit' }}
+                                        />
+                                    </div>
+
+                                    {/* Attendees (for meetings) */}
+                                    {newEventType === 'meeting' && (
+                                        <div style={{ position: 'relative' }}>
+                                            <Users size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                            <input
+                                                type="text"
+                                                placeholder="Attendees (comma-separated emails)"
+                                                value={newEventAttendees}
+                                                onChange={(e) => setNewEventAttendees(e.target.value)}
+                                                style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={isCreatingEvent}
+                                        style={{
+                                            padding: '10px',
+                                            borderRadius: '8px',
+                                            backgroundColor: newEventType === 'meeting' ? '#34A853' : '#4285F4',
+                                            color: 'white',
+                                            fontWeight: '600',
+                                            fontSize: '0.8rem',
+                                            opacity: isCreatingEvent ? 0.7 : 1,
+                                            cursor: isCreatingEvent ? 'not-allowed' : 'pointer',
+                                            border: 'none',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px'
+                                        }}
+                                    >
+                                        {newEventType === 'meeting' ? <Video size={14} /> : <CalendarIcon size={14} />}
+                                        {isCreatingEvent ? 'Adding...' : newEventType === 'meeting' ? 'Schedule Meeting' : 'Add Event'}
+                                    </button>
                                 </form>
                             </div>
                         )}
@@ -889,6 +1016,7 @@ function Dashboard({
                 onAddReminder={onAddReminder}
                 onDeleteReminder={onDeleteReminder}
                 onUpdateReminder={onUpdateReminder}
+                googleToken={googleToken}
             />
 
             <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)' }}>
