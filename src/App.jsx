@@ -25,7 +25,6 @@ function App() {
     const [folders, setFolders] = useState([]);
     const [studySessions, setStudySessions] = useState([]);
     const [goals, setGoals] = useState({});
-    const [goalCompleted, setGoalCompleted] = useState(false);
     const [showGoalCelebration, setShowGoalCelebration] = useState(false);
 
 
@@ -279,20 +278,23 @@ function App() {
     }, [studySessions]);
     
     // Check if goal is completed and trigger celebration
+    const [hasCelebrated, setHasCelebrated] = useState(false);
+    
     useEffect(() => {
-        if (todayStudyHours >= dailyGoalHours && !goalCompleted) {
-            setGoalCompleted(true);
+        if (todayStudyHours >= dailyGoalHours && !hasCelebrated) {
+            setHasCelebrated(true);
             setShowGoalCelebration(true);
             // Auto-hide after 3 seconds
             const timer = setTimeout(() => {
                 setShowGoalCelebration(false);
             }, 3000);
             return () => clearTimeout(timer);
-        } else if (todayStudyHours < dailyGoalHours && goalCompleted) {
-            setGoalCompleted(false);
+        } else if (todayStudyHours < dailyGoalHours && hasCelebrated) {
+            // Reset for next day if hours drop below goal
+            setHasCelebrated(false);
             setShowGoalCelebration(false);
         }
-    }, [todayStudyHours, dailyGoalHours, goalCompleted]);
+    }, [todayStudyHours, dailyGoalHours, hasCelebrated]);
 
 
     if (!user) {
@@ -335,125 +337,6 @@ function App() {
 
     return (
         <>
-            {/* Goal Completion Edge Lighting Effect - Subtle 3-second animation */}
-            {showGoalCelebration && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    pointerEvents: 'none',
-                    zIndex: 9999,
-                    overflow: 'hidden'
-                }}>
-                    {/* Top edge glow */}
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '3px',
-                        background: 'linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
-                        backgroundSize: '500% 100%',
-                        animation: 'edgeFlow 2s ease infinite',
-                        boxShadow: '0 0 15px rgba(255,0,128,0.6), 0 0 30px rgba(255,140,0,0.4)',
-                        opacity: 0.9
-                    }} />
-                    {/* Bottom edge glow */}
-                    <div style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: '3px',
-                        background: 'linear-gradient(270deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
-                        backgroundSize: '500% 100%',
-                        animation: 'edgeFlow 2s ease infinite reverse',
-                        boxShadow: '0 0 15px rgba(123,44,191,0.6), 0 0 30px rgba(64,224,208,0.4)',
-                        opacity: 0.9
-                    }} />
-                    {/* Left edge glow */}
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        bottom: 0,
-                        width: '3px',
-                        background: 'linear-gradient(180deg, #ff0080, #40e0d0, #7b2cbf, #ff8c00, #ff0080)',
-                        backgroundSize: '100% 500%',
-                        animation: 'edgeFlowVertical 2s ease infinite',
-                        boxShadow: '0 0 15px rgba(255,0,128,0.6), 0 0 30px rgba(64,224,208,0.4)',
-                        opacity: 0.9
-                    }} />
-                    {/* Right edge glow */}
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        width: '3px',
-                        background: 'linear-gradient(0deg, #ff0080, #40e0d0, #7b2cbf, #ff8c00, #ff0080)',
-                        backgroundSize: '100% 500%',
-                        animation: 'edgeFlowVertical 2s ease infinite reverse',
-                        boxShadow: '0 0 15px rgba(255,140,0,0.6), 0 0 30px rgba(123,44,191,0.4)',
-                        opacity: 0.9
-                    }} />
-                    {/* Corner accents */}
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '40px',
-                        height: '40px',
-                        borderTop: '2px solid rgba(255,0,128,0.8)',
-                        borderLeft: '2px solid rgba(255,0,128,0.8)',
-                        borderTopLeftRadius: '8px'
-                    }} />
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        width: '40px',
-                        height: '40px',
-                        borderTop: '2px solid rgba(255,140,0,0.8)',
-                        borderRight: '2px solid rgba(255,140,0,0.8)',
-                        borderTopRightRadius: '8px'
-                    }} />
-                    <div style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        width: '40px',
-                        height: '40px',
-                        borderBottom: '2px solid rgba(64,224,208,0.8)',
-                        borderLeft: '2px solid rgba(64,224,208,0.8)',
-                        borderBottomLeftRadius: '8px'
-                    }} />
-                    <div style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        right: 0,
-                        width: '40px',
-                        height: '40px',
-                        borderBottom: '2px solid rgba(123,44,191,0.8)',
-                        borderRight: '2px solid rgba(123,44,191,0.8)',
-                        borderBottomRightRadius: '8px'
-                    }} />
-                    <style>{`
-                        @keyframes edgeFlow {
-                            0% { background-position: 0% 50%; }
-                            50% { background-position: 100% 50%; }
-                            100% { background-position: 0% 50%; }
-                        }
-                        @keyframes edgeFlowVertical {
-                            0% { background-position: 50% 0%; }
-                            50% { background-position: 50% 100%; }
-                            100% { background-position: 50% 0%; }
-                        }
-                    `}</style>
-                </div>
-            )}
             <div className="app-container">
                 {/* Main Content - Left Side */}
                 <div className="main-content">
@@ -514,6 +397,7 @@ function App() {
                         onAddTask={addTask}
                         onDeleteTask={deleteTask}
                         onToggleTask={toggleTask}
+                        goalCompleted={showGoalCelebration}
                     />
 
                 </div>

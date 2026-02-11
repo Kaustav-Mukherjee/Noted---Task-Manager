@@ -38,7 +38,8 @@ function Dashboard({
     onAddFolder, onUpdateFolder, onDeleteFolder,
     studySessions, addStudySession, onDeleteStudySession,
     streak, goals, updateGoal,
-    onAddTask, onDeleteTask
+    onAddTask, onDeleteTask,
+    goalCompleted = false
 }) {
     const [timeRange, setTimeRange] = useState('Week');
     const [studyTimeRange, setStudyTimeRange] = useState('Week');
@@ -556,7 +557,109 @@ function Dashboard({
             </div>
 
             {/* Study Hours Card with Time Range Toggle */}
-            <div className="fade-in" style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
+            <div className="fade-in" style={{ 
+                padding: '16px', 
+                backgroundColor: 'var(--bg-card)', 
+                borderRadius: 'var(--radius)', 
+                border: goalCompleted ? '1px solid transparent' : '1px solid var(--border)', 
+                transition: 'all var(--transition-main)',
+                position: 'relative',
+                overflow: 'hidden'
+            }}>
+                {/* Subtle Edge Glow Effect for Goal Completion */}
+                {goalCompleted && (
+                    <>
+                        {/* Top edge gradient */}
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '40px',
+                            background: 'linear-gradient(180deg, rgba(255,0,128,0.15) 0%, transparent 100%)',
+                            filter: 'blur(8px)',
+                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                            pointerEvents: 'none'
+                        }} />
+                        {/* Bottom edge gradient */}
+                        <div style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '40px',
+                            background: 'linear-gradient(0deg, rgba(64,224,208,0.15) 0%, transparent 100%)',
+                            filter: 'blur(8px)',
+                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards',
+                            pointerEvents: 'none'
+                        }} />
+                        {/* Left edge gradient */}
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            bottom: 0,
+                            width: '40px',
+                            background: 'linear-gradient(90deg, rgba(255,140,0,0.12) 0%, transparent 100%)',
+                            filter: 'blur(8px)',
+                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards',
+                            pointerEvents: 'none'
+                        }} />
+                        {/* Right edge gradient */}
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            width: '40px',
+                            background: 'linear-gradient(270deg, rgba(123,44,191,0.12) 0%, transparent 100%)',
+                            filter: 'blur(8px)',
+                            animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards',
+                            pointerEvents: 'none'
+                        }} />
+                        {/* Animated border lines */}
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '2px',
+                            background: 'linear-gradient(90deg, transparent, rgba(255,0,128,0.6), rgba(255,140,0,0.6), transparent)',
+                            backgroundSize: '200% 100%',
+                            animation: 'shimmer 2s ease-in-out infinite',
+                            opacity: 0
+                        }} className="border-animate" />
+                        <div style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '2px',
+                            background: 'linear-gradient(90deg, transparent, rgba(64,224,208,0.6), rgba(123,44,191,0.6), transparent)',
+                            backgroundSize: '200% 100%',
+                            animation: 'shimmer 2s ease-in-out infinite reverse',
+                            opacity: 0
+                        }} className="border-animate" />
+                        <style>{`
+                            @keyframes glowFadeIn {
+                                0% { opacity: 0; transform: scale(0.95); }
+                                100% { opacity: 1; transform: scale(1); }
+                            }
+                            @keyframes shimmer {
+                                0% { background-position: -200% 0; opacity: 0.3; }
+                                50% { opacity: 0.6; }
+                                100% { background-position: 200% 0; opacity: 0.3; }
+                            }
+                            .border-animate {
+                                animation: borderFadeIn 0.5s ease forwards, shimmer 2s ease-in-out infinite !important;
+                            }
+                            @keyframes borderFadeIn {
+                                0% { opacity: 0; }
+                                100% { opacity: 0.6; }
+                            }
+                        `}</style>
+                    </>
+                )}
 
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
