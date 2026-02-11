@@ -182,7 +182,7 @@ function Dashboard({
         } catch (error) {
             console.error("Failed to sync calendar", error);
             // Handle token expiration or revocation
-            if (error?.result?.error?.code === 401 || error?.code === 401 || error?.message?.includes('401')) {
+            if (error?.status === 401 || error?.code === 401 || error?.message?.includes('401') || error?.message?.includes('Invalid Credentials')) {
                 setGoogleToken(null);
                 localStorage.removeItem('google_access_token');
             }
@@ -262,7 +262,14 @@ function Dashboard({
             alert('Event added to Google Calendar!');
         } catch (error) {
             console.error('Failed to create event:', error);
-            alert('Failed to create event. See console.');
+            // Check if token is expired or invalid
+            if (error.status === 401 || error.code === 401 || error.message?.includes('401') || error.message?.includes('Invalid Credentials')) {
+                setGoogleToken(null);
+                localStorage.removeItem('google_access_token');
+                alert('Your Google Calendar session has expired. Please click "Sync Calendar" to re-authenticate.');
+            } else {
+                alert(`Failed to create event: ${error.message || 'Unknown error'}`);
+            }
         } finally {
             setIsCreatingEvent(false);
         }

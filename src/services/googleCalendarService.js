@@ -23,7 +23,11 @@ export const getCalendarEvents = async (accessToken, timeMin, timeMax) => {
         );
 
         if (!response.ok) {
-            throw new Error('Failed to fetch calendar events');
+            const errorData = await response.json().catch(() => ({}));
+            const error = new Error(errorData.error?.message || 'Failed to fetch calendar events');
+            error.code = errorData.error?.code || response.status;
+            error.status = response.status;
+            throw error;
         }
 
         const data = await response.json();
@@ -56,7 +60,10 @@ export const createCalendarEvent = async (accessToken, event) => {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error.message || 'Failed to create calendar event');
+            const error = new Error(errorData.error?.message || 'Failed to create calendar event');
+            error.code = errorData.error?.code || response.status;
+            error.status = response.status;
+            throw error;
         }
 
         return await response.json();
