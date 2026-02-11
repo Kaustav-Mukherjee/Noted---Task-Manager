@@ -696,19 +696,30 @@ function Dashboard({
                                         filter: 'blur(8px)',
                                         borderRadius: '10px',
                                         zIndex: 1,
-                                        animation: 'sliderGlowPulse 1.5s ease-in-out 2',
-                                        opacity: 0.9
+                                        animation: 'sliderGlowPulse 1.5s ease-in-out 2 forwards'
                                     }}
                                 />
                                 <style>{`
                                     @keyframes sliderGlowPulse {
-                                        0%, 100% {
+                                        0% {
                                             opacity: 0.6;
                                             filter: blur(6px);
                                         }
-                                        50% {
+                                        25% {
                                             opacity: 1;
                                             filter: blur(12px);
+                                        }
+                                        50% {
+                                            opacity: 0.6;
+                                            filter: blur(6px);
+                                        }
+                                        75% {
+                                            opacity: 1;
+                                            filter: blur(12px);
+                                        }
+                                        100% {
+                                            opacity: 0;
+                                            filter: blur(6px);
                                         }
                                     }
                                 `}</style>
