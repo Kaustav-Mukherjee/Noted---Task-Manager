@@ -670,7 +670,7 @@ function Dashboard({
                             {todayStudyHours.toFixed(1)} / {dailyGoalHours}h
                         </span>
                     </div>
-                    <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-hover)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-hover)', borderRadius: '3px', position: 'relative', marginBottom: '8px' }}>
                         <div
                             style={{
                                 width: `${goalProgress}%`,
@@ -678,21 +678,41 @@ function Dashboard({
                                 backgroundColor: 'var(--text-main)',
                                 borderRadius: '3px',
                                 transition: 'width 0.8s var(--ease-apple)',
-                                boxShadow: goalCompleted ? '0 0 10px 2px rgba(59, 130, 246, 0.6)' : 'none',
-                                animation: goalCompleted ? 'sliderPulse 1.5s ease-in-out 2' : 'none'
+                                position: 'relative',
+                                zIndex: 2
                             }}
                         />
                         {goalCompleted && (
-                            <style>{`
-                                @keyframes sliderPulse {
-                                    0%, 100% {
-                                        box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.6);
+                            <>
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '0',
+                                        width: `${goalProgress}%`,
+                                        height: '20px',
+                                        transform: 'translateY(-50%)',
+                                        background: 'linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent)',
+                                        filter: 'blur(8px)',
+                                        borderRadius: '10px',
+                                        zIndex: 1,
+                                        animation: 'sliderGlowPulse 1.5s ease-in-out 2',
+                                        opacity: 0.9
+                                    }}
+                                />
+                                <style>{`
+                                    @keyframes sliderGlowPulse {
+                                        0%, 100% {
+                                            opacity: 0.6;
+                                            filter: blur(6px);
+                                        }
+                                        50% {
+                                            opacity: 1;
+                                            filter: blur(12px);
+                                        }
                                     }
-                                    50% {
-                                        box-shadow: 0 0 20px 6px rgba(59, 130, 246, 0.9);
-                                    }
-                                }
-                            `}</style>
+                                `}</style>
+                            </>
                         )}
                     </div>
 
