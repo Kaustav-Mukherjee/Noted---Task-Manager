@@ -565,89 +565,98 @@ function Dashboard({
                 transition: 'all var(--transition-main)',
                 position: 'relative'
             }}>
-                {/* Subtle Edge Glow Effect for Goal Completion */}
+                {/* Subtle Edge Glow Effect for Goal Completion - contained within card with rounded corners */}
                 {goalCompleted && (
-                    <>
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: 'var(--radius)',
+                        overflow: 'hidden',
+                        pointerEvents: 'none',
+                        zIndex: 1
+                    }}>
                         {/* Top edge gradient */}
                         <div style={{
                             position: 'absolute',
                             top: 0,
-                            left: 0,
-                            right: 0,
-                            height: '40px',
-                            background: 'linear-gradient(180deg, rgba(255,0,128,0.15) 0%, transparent 100%)',
-                            filter: 'blur(8px)',
+                            left: 8,
+                            right: 8,
+                            height: '30px',
+                            background: 'linear-gradient(180deg, rgba(255,0,128,0.2) 0%, transparent 100%)',
+                            filter: 'blur(6px)',
                             animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-                            pointerEvents: 'none'
+                            borderRadius: '15px 15px 0 0'
                         }} />
                         {/* Bottom edge gradient */}
                         <div style={{
                             position: 'absolute',
                             bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: '40px',
-                            background: 'linear-gradient(0deg, rgba(64,224,208,0.15) 0%, transparent 100%)',
-                            filter: 'blur(8px)',
+                            left: 8,
+                            right: 8,
+                            height: '30px',
+                            background: 'linear-gradient(0deg, rgba(64,224,208,0.2) 0%, transparent 100%)',
+                            filter: 'blur(6px)',
                             animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards',
-                            pointerEvents: 'none'
+                            borderRadius: '0 0 15px 15px'
                         }} />
                         {/* Left edge gradient */}
                         <div style={{
                             position: 'absolute',
-                            top: 0,
+                            top: 8,
                             left: 0,
-                            bottom: 0,
-                            width: '40px',
-                            background: 'linear-gradient(90deg, rgba(255,140,0,0.12) 0%, transparent 100%)',
-                            filter: 'blur(8px)',
+                            bottom: 8,
+                            width: '30px',
+                            background: 'linear-gradient(90deg, rgba(255,140,0,0.15) 0%, transparent 100%)',
+                            filter: 'blur(6px)',
                             animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards',
-                            pointerEvents: 'none'
+                            borderRadius: '15px 0 0 15px'
                         }} />
                         {/* Right edge gradient */}
                         <div style={{
                             position: 'absolute',
-                            top: 0,
+                            top: 8,
                             right: 0,
-                            bottom: 0,
-                            width: '40px',
-                            background: 'linear-gradient(270deg, rgba(123,44,191,0.12) 0%, transparent 100%)',
-                            filter: 'blur(8px)',
+                            bottom: 8,
+                            width: '30px',
+                            background: 'linear-gradient(270deg, rgba(123,44,191,0.15) 0%, transparent 100%)',
+                            filter: 'blur(6px)',
                             animation: 'glowFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards',
-                            pointerEvents: 'none'
+                            borderRadius: '0 15px 15px 0'
                         }} />
                         {/* Animated border lines */}
                         <div style={{
                             position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: '2px',
-                            background: 'linear-gradient(90deg, transparent, rgba(255,0,128,0.6), rgba(255,140,0,0.6), transparent)',
+                            top: 2,
+                            left: 16,
+                            right: 16,
+                            height: '1px',
+                            background: 'linear-gradient(90deg, transparent, rgba(255,0,128,0.5), rgba(255,140,0,0.5), transparent)',
                             backgroundSize: '200% 100%',
                             animation: 'shimmer 2s ease-in-out infinite',
-                            opacity: 0
+                            opacity: 0,
+                            borderRadius: '1px'
                         }} className="border-animate" />
                         <div style={{
                             position: 'absolute',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: '2px',
-                            background: 'linear-gradient(90deg, transparent, rgba(64,224,208,0.6), rgba(123,44,191,0.6), transparent)',
+                            bottom: 2,
+                            left: 16,
+                            right: 16,
+                            height: '1px',
+                            background: 'linear-gradient(90deg, transparent, rgba(64,224,208,0.5), rgba(123,44,191,0.5), transparent)',
                             backgroundSize: '200% 100%',
                             animation: 'shimmer 2s ease-in-out infinite reverse',
-                            opacity: 0
+                            opacity: 0,
+                            borderRadius: '1px'
                         }} className="border-animate" />
                         <style>{`
                             @keyframes glowFadeIn {
-                                0% { opacity: 0; transform: scale(0.95); }
-                                100% { opacity: 1; transform: scale(1); }
+                                0% { opacity: 0; }
+                                100% { opacity: 1; }
                             }
                             @keyframes shimmer {
-                                0% { background-position: -200% 0; opacity: 0.3; }
-                                50% { opacity: 0.6; }
-                                100% { background-position: 200% 0; opacity: 0.3; }
+                                0% { background-position: -200% 0; opacity: 0.4; }
+                                50% { opacity: 0.7; }
+                                100% { background-position: 200% 0; opacity: 0.4; }
                             }
                             .border-animate {
                                 animation: borderFadeIn 0.5s ease forwards, shimmer 2s ease-in-out infinite !important;
@@ -657,7 +666,7 @@ function Dashboard({
                                 100% { opacity: 0.6; }
                             }
                         `}</style>
-                    </>
+                    </div>
                 )}
 
 
@@ -787,12 +796,20 @@ function Dashboard({
                     <TimeRangeToggle value={studyTimeRange} onChange={setStudyTimeRange} />
                 </div>
 
-                <div style={{ height: '85px', width: '100%' }}>
+                <div style={{ height: '85px', width: '100%', position: 'relative', zIndex: 10 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={studyGraphData}>
+                        <AreaChart data={studyGraphData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.75rem' }}
-                                cursor={false}
+                                contentStyle={{ 
+                                    backgroundColor: 'var(--bg-app)', 
+                                    border: '1px solid var(--border)', 
+                                    borderRadius: '8px', 
+                                    fontSize: '0.75rem',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                                }}
+                                cursor={{ stroke: 'var(--text-muted)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                position={{ y: -40 }}
+                                wrapperStyle={{ zIndex: 1000, outline: 'none' }}
                             />
                             <XAxis
                                 dataKey="name"
