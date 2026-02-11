@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import TaskInput from './components/TaskInput';
@@ -10,6 +10,7 @@ import FocusTimer from './components/FocusTimer';
 import YouTubeNowPlaying from './components/YouTubeNowPlaying';
 import { Zap } from 'lucide-react';
 import * as firestoreService from './services/firestoreService';
+import { playAlertSound } from './utils/sound';
 
 
 function App() {
@@ -115,6 +116,43 @@ function App() {
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
+
+    // Check for reminders every minute
+    useEffect(() => {
+        const checkReminders = () => {
+            const now = new Date();
+            reminders.forEach(reminder => {
+                if (reminder.active && reminder.dueDate) {
+                    const due = new Date(reminder.dueDate);
+                    if (isSameDay(now, due) &&
+                        now.getHours() === due.getHours() &&
+                        now.getMinutes() === due.getMinutes()) {
+
+                        playAlertSound();
+                        if (Notification.permission === 'granted') {
+                            new Notification("Reminder", { body: reminder.title });
+                        }
+                    }
+                }
+            });
+        };
+
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        const interval = setInterval(checkReminders, 60000);
+        checkReminders();
+
+        return () => clearInterval(interval);
+    }, [reminders]);
+
+    const todaysTasks = useMemo(() => {
+        return tasks.filter(task => {
+            if (!task.date) return false;
+            return isSameDay(new Date(task.date), new Date());
+        });
+    }, [tasks]);
 
     const toggleTheme = () => {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -282,7 +320,7 @@ function App() {
                         <TaskInput onAdd={addTask} />
 
                         <TaskList
-                            tasks={tasks}
+                            tasks={todaysTasks}
                             onToggle={toggleTask}
                             onDelete={deleteTask}
                         />
@@ -294,7 +332,7 @@ function App() {
                                 <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
                             </div>
 
-<div className="focus-mode-grid" style={{
+                            <div className="focus-mode-grid" style={{
                                 display: 'grid',
                                 gridTemplateColumns: '1fr 1fr',
                                 gap: 'var(--spacing-lg)',

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Zap, MoreHorizontal, Settings, Clock, Timer as TimerIcon } from 'lucide-react';
+import { playAlertSound } from '../utils/sound';
 
 const MODES = {
     FOCUS: { label: 'Focus', minutes: 25, color: '#3b82f6' },
@@ -14,6 +15,11 @@ function FocusTimer({ onTimerComplete }) {
     const [useSeconds, setUseSeconds] = useState(0); // For stopwatch
     const [isActive, setIsActive] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+
+    // Custom Duration Handling
+    const [customDuration, setCustomDuration] = useState(25);
+    const [isEditingDuration, setIsEditingDuration] = useState(false);
+
     const timerRef = useRef(null);
     const startTimeRef = useRef(null);
     const elapsedRef = useRef(0);
@@ -28,7 +34,8 @@ function FocusTimer({ onTimerComplete }) {
             setTimeLeft(state.timeLeft || MODES.FOCUS.minutes * 60);
             setUseSeconds(state.useSeconds || 0);
             setIsActive(state.isActive || false);
-            
+            if (state.customDuration) setCustomDuration(state.customDuration); // Restore custom duration
+
             if (state.isActive && state.startTime) {
                 const elapsedSinceStart = Math.floor((Date.now() - state.startTime) / 1000);
                 if (state.isTimerMode) {
@@ -58,10 +65,11 @@ function FocusTimer({ onTimerComplete }) {
             timeLeft,
             useSeconds,
             isActive,
+            customDuration, // Save custom duration
             startTime: isActive ? (startTimeRef.current || Date.now()) : null
         };
         localStorage.setItem('focusTimerState', JSON.stringify(stateToSave));
-    }, [mode, isTimerMode, timeLeft, useSeconds, isActive]);
+    }, [mode, isTimerMode, timeLeft, useSeconds, isActive, customDuration]);
 
     useEffect(() => {
         if (isActive) {
@@ -70,14 +78,15 @@ function FocusTimer({ onTimerComplete }) {
                 startTimeRef.current = Date.now();
                 elapsedRef.current = 0;
             }
-            
+
             timerRef.current = setInterval(() => {
                 const totalElapsed = elapsedRef.current + Math.floor((Date.now() - startTimeRef.current) / 1000);
-                
+
                 if (isTimerMode) {
-                    const newTimeLeft = Math.max(0, (MODES[mode].minutes * 60) - totalElapsed);
+                    const currentModeMinutes = mode === 'CUSTOM' ? customDuration : MODES[mode].minutes;
+                    const newTimeLeft = Math.max(0, (currentModeMinutes * 60) - totalElapsed);
                     setTimeLeft(newTimeLeft);
-                    
+
                     if (newTimeLeft === 0) {
                         handleComplete();
                     }
@@ -93,37 +102,65 @@ function FocusTimer({ onTimerComplete }) {
             }
         }
         return () => clearInterval(timerRef.current);
-    }, [isActive, isTimerMode, mode]);
+    }, [isActive, isTimerMode, mode, customDuration]);
 
     const handleComplete = () => {
         setIsActive(false);
-        if (mode === 'FOCUS') {
-            const hours = MODES.FOCUS.minutes / 60;
+        playAlertSound(); // Play sound
+
+        // Show notification
+        if (Notification.permission === 'granted') {
+            new Notification("Timer Complete!", {
+                body: `${MODES[mode]?.label || 'Custom'} timer finished.`
+            });
+        }
+
+        if (mode === 'FOCUS' || mode === 'CUSTOM') {
+            const hours = (mode === 'CUSTOM' ? customDuration : MODES.FOCUS.minutes) / 60;
             onTimerComplete(hours);
         }
-        setTimeLeft(MODES[mode].minutes * 60);
+        resetTimerState();
+    };
+
+    const resetTimerState = () => {
+        const duration = mode === 'CUSTOM' ? customDuration : MODES[mode].minutes;
+        setTimeLeft(duration * 60);
     };
 
     const toggleTimer = () => setIsActive(!isActive);
 
-const resetTimer = () => {
+    const resetTimer = () => {
         setIsActive(false);
         startTimeRef.current = null;
         elapsedRef.current = 0;
         if (isTimerMode) {
-            setTimeLeft(MODES[mode].minutes * 60);
+            resetTimerState();
         } else {
             setUseSeconds(0);
         }
     };
 
-const switchMode = (newMode) => {
+    const switchMode = (newMode) => {
         setIsActive(false);
         startTimeRef.current = null;
         elapsedRef.current = 0;
         setMode(newMode);
         if (isTimerMode) {
-            setTimeLeft(MODES[newMode].minutes * 60);
+            if (newMode === 'CUSTOM') {
+                setTimeLeft(customDuration * 60);
+            } else {
+                setTimeLeft(MODES[newMode].minutes * 60);
+            }
+        }
+    };
+
+    const handleCustomDurationChange = (e) => {
+        const val = parseInt(e.target.value);
+        if (!isNaN(val) && val > 0) {
+            setCustomDuration(val);
+            if (mode === 'CUSTOM') {
+                setTimeLeft(val * 60);
+            }
         }
     };
 
@@ -133,7 +170,7 @@ const switchMode = (newMode) => {
         return { mins, secs };
     };
 
-    const totalSeconds = isTimerMode ? MODES[mode].minutes * 60 : 3600; // 60 mins for stopwatch wrap
+    const totalSeconds = isTimerMode ? ((mode === 'CUSTOM' ? customDuration : MODES[mode].minutes) * 60) : 3600;
     const currentSeconds = isTimerMode ? timeLeft : useSeconds;
     const progress = (currentSeconds / totalSeconds) * 100;
 
@@ -153,16 +190,19 @@ const switchMode = (newMode) => {
             const x2 = centerX + radius * Math.cos(rad);
             const y2 = centerY + radius * Math.sin(rad);
 
-            // Progress logic: for timer, ticks disappear as time runs out. For stopwatch, they fill up.
+            // Progress logic
+            const total = isTimerMode ? ((mode === 'CUSTOM' ? customDuration : MODES[mode].minutes) * 60) : 3600;
+            const current = isTimerMode ? timeLeft : (useSeconds % 3600);
+
             const isActiveTick = isTimerMode
-                ? (i / tickCount) < (timeLeft / (MODES[mode].minutes * 60))
-                : (i / tickCount) < ((useSeconds % 3600) / 3600);
+                ? (i / tickCount) < (current / total)
+                : (i / tickCount) < (current / 3600);
 
             ticks.push(
                 <line
                     key={i}
                     x1={x1} y1={y1} x2={x2} y2={y2}
-                    stroke={isActiveTick ? MODES[mode].color : 'var(--bg-hover)'}
+                    stroke={isActiveTick ? (MODES[mode]?.color || '#8b5cf6') : 'var(--bg-hover)'}
                     strokeWidth={isActiveTick ? "4" : "3"}
                     strokeLinecap="round"
                     style={{
@@ -197,7 +237,7 @@ const switchMode = (newMode) => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Zap size={16} color={MODES[mode].color} fill={MODES[mode].color} style={{ opacity: 0.8 }} />
+                    <Zap size={16} color={MODES[mode]?.color || '#8b5cf6'} fill={MODES[mode]?.color || '#8b5cf6'} style={{ opacity: 0.8 }} />
                     <h3 style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                         {isTimerMode ? 'Focus Session' : 'Stopwatch'}
                     </h3>
@@ -223,6 +263,20 @@ const switchMode = (newMode) => {
                                 {MODES[k].label.split(' ')[0]}
                             </button>
                         ))}
+                        <button
+                            onClick={() => switchMode('CUSTOM')}
+                            style={{
+                                padding: '4px 8px',
+                                borderRadius: '7px',
+                                fontSize: '0.6rem',
+                                fontWeight: '600',
+                                backgroundColor: mode === 'CUSTOM' ? 'var(--bg-hover)' : 'transparent',
+                                color: mode === 'CUSTOM' ? 'var(--text-main)' : 'var(--text-muted)',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            Custom
+                        </button>
                     </div>
                 )}
             </div>
@@ -233,15 +287,53 @@ const switchMode = (newMode) => {
                     {renderTicks()}
                 </svg>
 
-                <div style={{ position: 'absolute', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    <span style={{ fontSize: '3.5rem', fontWeight: '300', color: 'var(--text-main)', lineHeight: 1 }}>
-                        {isTimerMode ? formatTime(timeLeft).mins : formatTime(useSeconds).mins}
-                    </span>
-                    <span style={{ fontSize: '1.2rem', fontWeight: '300', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                        {isTimerMode && formatTime(timeLeft).secs > 0 ? `:${formatTime(timeLeft).secs.toString().padStart(2, '0')}` : 
-                         !isTimerMode && formatTime(useSeconds).secs > 0 ? `:${formatTime(useSeconds).secs.toString().padStart(2, '0')}` : 
-                         'min'}
-                    </span>
+                <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                        {mode === 'CUSTOM' && !isActive && isEditingDuration ? (
+                            <input
+                                type="number"
+                                value={customDuration}
+                                onChange={handleCustomDurationChange}
+                                onBlur={() => setIsEditingDuration(false)}
+                                autoFocus
+                                style={{
+                                    fontSize: '3.5rem',
+                                    fontWeight: '300',
+                                    color: 'var(--text-main)',
+                                    lineHeight: 1,
+                                    width: '120px',
+                                    textAlign: 'center',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderBottom: '2px solid var(--text-main)',
+                                    outline: 'none'
+                                }}
+                            />
+                        ) : (
+                            <span
+                                onClick={() => mode === 'CUSTOM' && !isActive && setIsEditingDuration(true)}
+                                style={{
+                                    fontSize: '3.5rem',
+                                    fontWeight: '300',
+                                    color: 'var(--text-main)',
+                                    lineHeight: 1,
+                                    cursor: mode === 'CUSTOM' && !isActive ? 'pointer' : 'default',
+                                    borderBottom: mode === 'CUSTOM' && !isActive ? '1px dashed var(--text-muted)' : 'none'
+                                }}
+                                title={mode === 'CUSTOM' ? "Click to edit duration" : ""}
+                            >
+                                {isTimerMode ? formatTime(timeLeft).mins : formatTime(useSeconds).mins}
+                            </span>
+                        )}
+                        <span style={{ fontSize: '1.2rem', fontWeight: '300', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                            {isTimerMode && formatTime(timeLeft).secs > 0 ? `:${formatTime(timeLeft).secs.toString().padStart(2, '0')}` :
+                                !isTimerMode && formatTime(useSeconds).secs > 0 ? `:${formatTime(useSeconds).secs.toString().padStart(2, '0')}` :
+                                    'min'}
+                        </span>
+                    </div>
+                    {mode === 'CUSTOM' && !isActive && !isEditingDuration && (
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.7 }}>Click time to edit</span>
+                    )}
                 </div>
             </div>
 
@@ -254,14 +346,14 @@ const switchMode = (newMode) => {
                             width: '52px',
                             height: '52px',
                             borderRadius: '50%',
-                            backgroundColor: isActive ? 'transparent' : MODES[mode].color,
+                            backgroundColor: isActive ? 'transparent' : (MODES[mode]?.color || '#8b5cf6'),
                             color: isActive ? 'var(--text-main)' : 'var(--bg-app)',
                             border: isActive ? `2px solid var(--border)` : 'none',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            boxShadow: isActive ? 'none' : `0 8px 20px ${MODES[mode].color}44`
+                            boxShadow: isActive ? 'none' : `0 8px 20px ${(MODES[mode]?.color || '#8b5cf6')}44`
                         }}
                     >
                         {isActive ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: '4px' }} />}
