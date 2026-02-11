@@ -8,7 +8,29 @@ import QuotesSection from './QuotesSection';
 import { useAuth } from '../contexts/AuthContext';
 import { getCalendarEvents, buildCalendarEvent, isApiNotEnabledError, isAuthError } from '../services/googleCalendarService';
 
+// Safe Date Utilities to prevent crashes
+const parseSafeDate = (dateVal) => {
+    if (!dateVal) return null;
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? null : d;
+};
 
+const safeFormat = (dateVal, formatStr) => {
+    const d = parseSafeDate(dateVal);
+    if (!d) return '';
+    try {
+        return format(d, formatStr);
+    } catch (e) {
+        return '';
+    }
+};
+
+const safeIsSameDay = (d1, d2) => {
+    const date1 = parseSafeDate(d1);
+    const date2 = parseSafeDate(d2);
+    if (!date1 || !date2) return false;
+    return isSameDay(date1, date2);
+};
 
 function Dashboard({
     tasks, reminders, onAddReminder, onDeleteReminder, onUpdateReminder,
@@ -54,27 +76,17 @@ function Dashboard({
     const today = new Date();
 
     const handleDateClick = (date) => {
-        if (!date || isNaN(new Date(date).getTime())) return;
+        const clickedDate = parseSafeDate(date);
+        if (!clickedDate) return;
 
-        const dateTasks = tasks.filter(t => {
-            if (!t.date) return false;
-            const d = new Date(t.date);
-            return !isNaN(d.getTime()) && isSameDay(d, date);
-        });
-
-        const dateReminders = reminders.filter(r => {
-            if (!r.dueDate) return false;
-            const d = new Date(r.dueDate);
-            return !isNaN(d.getTime()) && isSameDay(d, date);
-        });
-
+        const dateTasks = tasks.filter(t => safeIsSameDay(t.date, clickedDate));
+        const dateReminders = reminders.filter(r => r.dueDate && safeIsSameDay(r.dueDate, clickedDate));
         const dateGoogleEvents = googleEvents.filter(e => {
-            if (!e.start || (!e.start.dateTime && !e.start.date)) return false;
-            const eventStart = new Date(e.start.dateTime || e.start.date);
-            return !isNaN(eventStart.getTime()) && isSameDay(eventStart, date);
+            const start = e.start?.dateTime || e.start?.date;
+            return safeIsSameDay(start, clickedDate);
         });
 
-        setSelectedDateData({ date, tasks: dateTasks, reminders: dateReminders, googleEvents: dateGoogleEvents });
+        setSelectedDateData({ date: clickedDate, tasks: dateTasks, reminders: dateReminders, googleEvents: dateGoogleEvents });
         setShowDateModal(true);
     };
 
@@ -111,9 +123,9 @@ function Dashboard({
                 const dayNum = i + 1;
                 return {
                     name: labelDays.includes(dayNum) ? format(day, 'd') : '',
-                    total: tasks.filter(t => isSameDay(new Date(t.date), day)).length,
-                    completed: tasks.filter(t => isSameDay(new Date(t.date), day) && t.completed).length,
-                    remaining: tasks.filter(t => isSameDay(new Date(t.date), day)).length - tasks.filter(t => isSameDay(new Date(t.date), day) && t.completed).length,
+                    total: tasks.filter(t => safeIsSameDay(t.date, day)).length,
+                    completed: tasks.filter(t => safeIsSameDay(t.date, day) && t.completed).length,
+                    remaining: tasks.filter(t => safeIsSameDay(t.date, day)).length - tasks.filter(t => safeIsSameDay(t.date, day) && t.completed).length,
                     showLabel: labelDays.includes(dayNum)
                 };
             });
@@ -123,7 +135,8 @@ function Dashboard({
             const months = eachMonthOfInterval({ start, end });
             return months.map(month => {
                 const monthTasks = tasks.filter(t => {
-                    const d = new Date(t.date);
+                    const d = parseSafeDate(t.date);
+                    if (!d) return false;
                     return d.getMonth() === month.getMonth() && d.getFullYear() === month.getFullYear();
                 });
                 return {
@@ -145,7 +158,7 @@ function Dashboard({
         } else if (studyTimeRange === 'Week') {
             const last7Days = eachDayOfInterval({ start: subDays(today, 6), end: today });
             return last7Days.map(day => {
-                const sessionsThisDay = studySessions.filter(s => isSameDay(new Date(s.date), day));
+                const sessionsThisDay = studySessions.filter(s => safeIsSameDay(s.date, day));
                 return {
                     name: format(day, 'EEE'),
                     hours: sessionsThisDay.reduce((acc, curr) => acc + curr.hours, 0)
@@ -188,7 +201,7 @@ function Dashboard({
 
     const todayStudyHours = useMemo(() => {
         return studySessions
-            .filter(s => isSameDay(new Date(s.date), today))
+            .filter(s => safeIsSameDay(s.date, today))
             .reduce((acc, curr) => acc + curr.hours, 0);
     }, [studySessions, today]);
 
@@ -888,7 +901,7 @@ function Dashboard({
                     <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '20px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <h4 style={{ fontWeight: '700' }}>{format(selectedDateData.date, 'MMMM d, yyyy')}</h4>
+                                <h4 style={{ fontWeight: '700' }}>{safeFormat(selectedDateData.date, 'MMMM d, yyyy')}</h4>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Retroactive Management & Events</p>
                             </div>
                             <button onClick={() => setShowDateModal(false)}><X size={20} /></button>
@@ -938,10 +951,10 @@ function Dashboard({
                                     </div>
                                 )}
 
-                                {studySessions.filter(s => isSameDay(new Date(s.date), selectedDateData.date)).length > 0 && (
+                                {studySessions.filter(s => safeIsSameDay(s.date, selectedDateData.date)).length > 0 && (
                                     <div>
                                         <h5 style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>Study Sessions</h5>
-                                        {studySessions.filter(s => isSameDay(new Date(s.date), selectedDateData.date)).map(s => (
+                                        {studySessions.filter(s => safeIsSameDay(s.date, selectedDateData.date)).map(s => (
                                             <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px', backgroundColor: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '4px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <BookOpen size={12} color="#3b82f6" />
@@ -978,7 +991,7 @@ function Dashboard({
                                                 <div>
                                                     <div style={{ fontWeight: '500' }}>{e.summary}</div>
                                                     <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                                                        {e.start.dateTime ? format(new Date(e.start.dateTime), 'p') : 'All Day'}
+                                                        {e.start?.dateTime ? safeFormat(e.start.dateTime, 'p') : 'All Day'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1027,7 +1040,7 @@ function Dashboard({
                                                 <CalendarIcon size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                                 <input
                                                     type="date"
-                                                    value={newEventDate || format(selectedDateData.date, 'yyyy-MM-dd')}
+                                                    value={newEventDate || safeFormat(selectedDateData.date, 'yyyy-MM-dd')}
                                                     onChange={(e) => setNewEventDate(e.target.value)}
                                                     style={{ width: '100%', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', colorScheme: 'dark' }}
                                                 />
