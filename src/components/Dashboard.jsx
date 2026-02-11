@@ -594,82 +594,44 @@ function Dashboard({
                 transition: 'all var(--transition-main)',
                 position: 'relative'
             }}>
-                {/* Premium Apple-Level Edge Glow Effect for Goal Completion */}
+                {/* Edge-only Gradient Glow Effect for Goal Completion */}
                 {goalCompleted && (
                     <div style={{
                         position: 'absolute',
-                        inset: 0,
-                        borderRadius: 'var(--radius)',
-                        overflow: 'hidden',
+                        inset: '-4px',
+                        borderRadius: 'calc(var(--radius) + 4px)',
+                        padding: '3px',
+                        background: 'conic-gradient(from 0deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
+                        opacity: 0,
+                        animation: 'edgeGlowIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, edgeRotate 3s linear 0.5s forwards',
+                        filter: 'blur(2px)',
                         pointerEvents: 'none',
-                        zIndex: 1
+                        zIndex: -1
                     }}>
-                        {/* Outer glow layer - brighter */}
                         <div style={{
-                            position: 'absolute',
-                            inset: '-2px',
-                            borderRadius: 'calc(var(--radius) + 2px)',
-                            background: 'linear-gradient(135deg, rgba(255,0,128,0.4) 0%, rgba(255,140,0,0.4) 25%, rgba(64,224,208,0.4) 50%, rgba(123,44,191,0.4) 75%, rgba(255,0,128,0.4) 100%)',
-                            filter: 'blur(8px)',
-                            opacity: 0,
-                            animation: 'appleGlowIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards, appleGlowPulse 3s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.8s forwards'
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: 'var(--bg-card)',
+                            borderRadius: 'var(--radius)'
                         }} />
-                        
-                        {/* Middle glow layer */}
-                        <div style={{
-                            position: 'absolute',
-                            inset: '-1px',
-                            borderRadius: 'calc(var(--radius) + 1px)',
-                            background: 'linear-gradient(90deg, rgba(255,0,128,0.3), rgba(64,224,208,0.3), rgba(255,140,0,0.3), rgba(123,44,191,0.3))',
-                            filter: 'blur(4px)',
-                            opacity: 0,
-                            animation: 'appleGlowIn 0.6s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.1s forwards'
-                        }} />
-                        
-                        {/* Continuous border animation around entire edge */}
-                        <div style={{
-                            position: 'absolute',
-                            inset: '0',
-                            borderRadius: 'var(--radius)',
-                            padding: '2px',
-                            background: 'linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #7b2cbf, #ff0080)',
-                            backgroundSize: '400% 100%',
-                            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                            WebkitMaskComposite: 'xor',
-                            maskComposite: 'exclude',
-                            opacity: 0,
-                            animation: 'borderGlowIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.3s forwards, borderFlow 3s linear 0.8s forwards'
-                        }} />
-                        
-                        {/* Inner highlight */}
-                        <div style={{
-                            position: 'absolute',
-                            inset: '2px',
-                            borderRadius: 'calc(var(--radius) - 2px)',
-                            background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%)',
-                            opacity: 0,
-                            animation: 'appleGlowIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1.0) 0.5s forwards'
-                        }} />
-                        
                         <style>{`
-                            @keyframes appleGlowIn {
-                                0% { opacity: 0; transform: scale(0.98); }
-                                100% { opacity: 1; transform: scale(1); }
+                            @keyframes edgeGlowIn {
+                                0% { opacity: 0; transform: scale(0.95); }
+                                100% { opacity: 0.9; transform: scale(1); }
                             }
-                            @keyframes appleGlowPulse {
-                                0% { opacity: 0.8; }
-                                50% { opacity: 0.5; }
-                                100% { opacity: 0.8; }
-                            }
-                            @keyframes borderGlowIn {
-                                0% { opacity: 0; }
-                                100% { opacity: 0.9; }
-                            }
-                            @keyframes borderFlow {
-                                0% { background-position: 0% 50%; opacity: 0.9; }
-                                33% { background-position: 100% 50%; opacity: 0.7; }
-                                66% { background-position: 200% 50%; opacity: 0.9; }
-                                100% { background-position: 300% 50%; opacity: 0.6; }
+                            @keyframes edgeRotate {
+                                0% { 
+                                    opacity: 0.9; 
+                                    filter: blur(2px);
+                                }
+                                50% { 
+                                    opacity: 0.6; 
+                                    filter: blur(3px);
+                                }
+                                100% { 
+                                    opacity: 0.4; 
+                                    filter: blur(4px);
+                                }
                             }
                         `}</style>
                     </div>
