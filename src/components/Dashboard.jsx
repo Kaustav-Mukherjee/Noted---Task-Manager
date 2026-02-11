@@ -35,7 +35,7 @@ function Dashboard({
     // Google Calendar State
     const [googleEvents, setGoogleEvents] = useState([]);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [googleToken, setGoogleToken] = useState(null);
+    const [googleToken, setGoogleToken] = useState(localStorage.getItem('google_access_token'));
     const { signInWithGoogle, user } = useAuth();
 
     const today = new Date();
@@ -170,6 +170,11 @@ function Dashboard({
             setGoogleEvents(events);
         } catch (error) {
             console.error("Failed to sync calendar", error);
+            // Handle token expiration or revocation
+            if (error?.result?.error?.code === 401 || error?.code === 401 || error?.message?.includes('401')) {
+                setGoogleToken(null);
+                localStorage.removeItem('google_access_token');
+            }
         } finally {
             setIsSyncing(false);
         }
@@ -182,6 +187,7 @@ function Dashboard({
             const result = await signInWithGoogle();
             if (result.token) {
                 setGoogleToken(result.token);
+                localStorage.setItem('google_access_token', result.token);
                 fetchGoogleEvents(result.token);
             }
         }
