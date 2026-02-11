@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Bell, Clock, Plus, MapPin, Calendar, ChevronDown, Check, Edit2, Users, FileText, Video } from 'lucide-react';
 import { format, isSameDay, isAfter, isBefore, parseISO, startOfDay } from 'date-fns';
-import { createCalendarEvent, buildCalendarEvent } from '../services/googleCalendarService';
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, buildCalendarEvent } from '../services/googleCalendarService';
 
 // Safe Date Utilities
 const parseSafeDate = (dateVal) => {
@@ -24,12 +24,19 @@ const safeIsAfter = (d1, d2) => {
     return isAfter(date1, date2);
 };
 
-function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateReminder, googleToken, googleEvents = [] }) {
+function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateReminder, googleToken, googleEvents = [], onGoogleEventsChange }) {
     const [view, setView] = useState('today'); // 'today' | 'upcoming' | 'all'
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [editingSource, setEditingSource] = useState(null); // 'local' or 'google'
     const [completingId, setCompletingId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Track completed Google Calendar events locally
+    const [completedGoogleEvents, setCompletedGoogleEvents] = useState(() => {
+        const saved = localStorage.getItem('completedGoogleEvents');
+        return saved ? JSON.parse(saved) : [];
+    });
 
     const [newReminder, setNewReminder] = useState({
         title: '',
@@ -45,6 +52,11 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
     const [expandedId, setExpandedId] = useState(null);
 
     const today = new Date();
+    
+    // Save completed Google events to localStorage
+    useEffect(() => {
+        localStorage.setItem('completedGoogleEvents', JSON.stringify(completedGoogleEvents));
+    }, [completedGoogleEvents]);
 
     // Combine local reminders with Google Events
     const combinedData = useMemo(() => {
@@ -53,14 +65,16 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
             id: e.id,
             title: e.summary || '(No Title)',
             dueDate: e.start?.dateTime || e.start?.date,
+            endDate: e.end?.dateTime || e.end?.date,
             location: e.location,
             description: e.description,
             type: 'google_event',
             source: 'google',
-            completed: false
+            completed: completedGoogleEvents.includes(e.id),
+            googleEvent: e // Keep original event data for editing
         }));
         return [...local, ...remote];
-    }, [reminders, googleEvents]);
+    }, [reminders, googleEvents, completedGoogleEvents]);
 
     // Filter combined data based on view
     const filteredReminders = useMemo(() => {
@@ -80,30 +94,90 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
     }, [combinedData, view, completingId]);
 
     const handleEdit = (rem) => {
-        const [date, time] = rem.dueDate ? rem.dueDate.split('T') : [format(new Date(), 'yyyy-MM-dd'), '09:00'];
-        setNewReminder({
-            title: rem.title,
-            date: date,
-            time: time,
-            endTime: rem.endTime || '',
-            location: rem.location || '',
-            description: rem.description || '',
-            type: rem.type || 'reminder',
-            attendees: rem.attendees || '',
-            addToGoogleCalendar: rem.googleCalendarEventId ? true : true // Default to true for sync
-        });
+        let date, time, endTime = '';
+        
+        if (rem.source === 'google') {
+            // Handle Google Calendar event dates
+            const dueDate = parseSafeDate(rem.dueDate);
+            if (dueDate) {
+                date = format(dueDate, 'yyyy-MM-dd');
+                time = format(dueDate, 'HH:mm');
+            } else {
+                date = format(new Date(), 'yyyy-MM-dd');
+                time = '09:00';
+            }
+            
+            // Get end time if available
+            if (rem.endDate) {
+                const endDateObj = parseSafeDate(rem.endDate);
+                if (endDateObj) {
+                    endTime = format(endDateObj, 'HH:mm');
+                }
+            }
+            
+            setNewReminder({
+                title: rem.title,
+                date: date,
+                time: time,
+                endTime: endTime,
+                location: rem.location || '',
+                description: rem.description || '',
+                type: 'event',
+                attendees: rem.googleEvent?.attendees?.map(a => a.email).join(', ') || '',
+                addToGoogleCalendar: true
+            });
+            setEditingSource('google');
+        } else {
+            // Local reminder
+            [date, time] = rem.dueDate ? rem.dueDate.split('T') : [format(new Date(), 'yyyy-MM-dd'), '09:00'];
+            setNewReminder({
+                title: rem.title,
+                date: date,
+                time: time,
+                endTime: rem.endTime || '',
+                location: rem.location || '',
+                description: rem.description || '',
+                type: rem.type || 'reminder',
+                attendees: rem.attendees || '',
+                addToGoogleCalendar: rem.googleCalendarEventId ? true : true
+            });
+            setEditingSource('local');
+        }
+        
         setEditingId(rem.id);
         setShowAddForm(true);
         setExpandedId(null);
     };
 
-    const handleComplete = (id) => {
+    const handleComplete = (id, source) => {
         setCompletingId(id);
         // Wait for animation
         setTimeout(async () => {
-            await onUpdateReminder(id, { completed: true, active: false });
+            if (source === 'google') {
+                // Track completed Google events locally
+                setCompletedGoogleEvents(prev => [...prev, id]);
+            } else {
+                await onUpdateReminder(id, { completed: true, active: false });
+            }
             setCompletingId(null);
         }, 800);
+    };
+    
+    const handleDeleteGoogleEvent = async (eventId) => {
+        if (!googleToken) return;
+        
+        if (!window.confirm('Delete this Google Calendar event?')) return;
+        
+        try {
+            await deleteCalendarEvent(googleToken, eventId);
+            // Remove from local state
+            if (onGoogleEventsChange) {
+                onGoogleEventsChange(googleEvents.filter(e => e.id !== eventId));
+            }
+        } catch (error) {
+            console.error('Failed to delete Google Calendar event:', error);
+            alert('Failed to delete event. Please try again.');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -113,6 +187,44 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
         setIsSubmitting(true);
 
         try {
+            // If editing a Google Calendar event
+            if (editingId && editingSource === 'google' && googleToken) {
+                try {
+                    const calEvent = buildCalendarEvent({
+                        title: newReminder.title,
+                        date: newReminder.date,
+                        startTime: newReminder.time,
+                        endTime: newReminder.endTime,
+                        location: newReminder.location,
+                        description: newReminder.description,
+                        attendees: newReminder.attendees ? newReminder.attendees.split(',').map(e => e.trim()) : [],
+                        isMeeting: newReminder.type === 'meeting'
+                    });
+
+                    const updated = await updateCalendarEvent(googleToken, editingId, calEvent);
+                    
+                    // Update local state
+                    if (onGoogleEventsChange) {
+                        onGoogleEventsChange(googleEvents.map(e => e.id === editingId ? updated : e));
+                    }
+                    
+                    setEditingId(null);
+                    setEditingSource(null);
+                    setShowAddForm(false);
+                    setNewReminder({
+                        title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00',
+                        endTime: '', location: '', description: '', type: 'reminder', attendees: '',
+                        addToGoogleCalendar: false
+                    });
+                } catch (error) {
+                    console.error('Failed to update Google Calendar event:', error);
+                    alert('Failed to update event. Please try again.');
+                } finally {
+                    setIsSubmitting(false);
+                }
+                return;
+            }
+
             const reminderData = {
                 title: newReminder.title,
                 dueDate: `${newReminder.date}T${newReminder.time}`,
@@ -170,6 +282,7 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
             if (editingId) {
                 onUpdateReminder(editingId, reminderData);
                 setEditingId(null);
+                setEditingSource(null);
             } else {
                 onAddReminder(reminderData);
             }
@@ -642,63 +755,69 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                                             )}
                                         </div>
                                     )}
-                                    {rem.source === 'local' && (
-                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                    {/* Action buttons for both local and Google events */}
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleEdit(rem); }}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                borderRadius: '6px',
+                                                backgroundColor: 'var(--bg-hover)',
+                                                fontSize: '0.7rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '4px',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.2)'}
+                                            onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
+                                        >
+                                            <Edit2 size={12} /> Edit
+                                        </button>
+                                        <button
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                if (rem.source === 'google') {
+                                                    handleDeleteGoogleEvent(rem.id);
+                                                } else {
+                                                    onDeleteReminder(rem.id);
+                                                }
+                                            }}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                borderRadius: '6px',
+                                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                                color: '#ef4444',
+                                                fontSize: '0.7rem',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
+                                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                                        >
+                                            Delete
+                                        </button>
+                                        {!rem.completed && (
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); handleEdit(rem); }}
+                                                onClick={(e) => { e.stopPropagation(); handleComplete(rem.id, rem.source); }}
                                                 style={{
                                                     flex: 1,
                                                     padding: '8px',
                                                     borderRadius: '6px',
-                                                    backgroundColor: 'var(--bg-hover)',
+                                                    backgroundColor: '#22c55e',
+                                                    color: 'white',
                                                     fontSize: '0.7rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '4px',
                                                     transition: 'all 0.2s ease'
                                                 }}
-                                                onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.2)'}
+                                                onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
                                                 onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
                                             >
-                                                <Edit2 size={12} /> Edit
+                                                Complete
                                             </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onDeleteReminder(rem.id); }}
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '8px',
-                                                    borderRadius: '6px',
-                                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                                    color: '#ef4444',
-                                                    fontSize: '0.7rem',
-                                                    transition: 'all 0.2s ease'
-                                                }}
-                                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
-                                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                                            >
-                                                Delete
-                                            </button>
-                                            {!rem.completed && (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleComplete(rem.id); }}
-                                                    style={{
-                                                        flex: 1,
-                                                        padding: '8px',
-                                                        borderRadius: '6px',
-                                                        backgroundColor: '#22c55e',
-                                                        color: 'white',
-                                                        fontSize: '0.7rem',
-                                                        transition: 'all 0.2s ease'
-                                                    }}
-                                                    onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                                                    onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
-                                                >
-                                                    Complete
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );

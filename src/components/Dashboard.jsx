@@ -1028,6 +1028,7 @@ function Dashboard({
                 onUpdateReminder={onUpdateReminder}
                 googleToken={googleToken}
                 googleEvents={googleEvents}
+                onGoogleEventsChange={setGoogleEvents}
             />
 
             <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)' }}>
