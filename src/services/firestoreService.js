@@ -43,11 +43,32 @@ export const deleteTask = async (userId, taskId) => {
 export const subscribeTasks = (userId, callback) => {
     const q = query(tasksCollection(userId), orderBy('createdAt', 'desc'));
     return onSnapshot(q, (snapshot) => {
-        const tasks = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            date: doc.data().createdAt?.toDate?.() || new Date()
-        }));
+        const tasks = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Handle Firestore Timestamp or string dates
+            let taskDate;
+            if (data.date) {
+                // Check if it's a Firestore Timestamp object
+                if (data.date.toDate) {
+                    taskDate = data.date.toDate().toISOString();
+                } else if (typeof data.date === 'string') {
+                    taskDate = data.date;
+                } else {
+                    taskDate = new Date(data.date).toISOString();
+                }
+            } else if (data.createdAt?.toDate) {
+                // Fallback to createdAt only if date is missing
+                taskDate = data.createdAt.toDate().toISOString();
+            } else {
+                taskDate = new Date().toISOString();
+            }
+
+            return {
+                id: doc.id,
+                ...data,
+                date: taskDate
+            };
+        });
         callback(tasks);
     });
 };
