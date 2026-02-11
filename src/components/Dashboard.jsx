@@ -38,7 +38,7 @@ function Dashboard({
     onAddFolder, onUpdateFolder, onDeleteFolder,
     studySessions, addStudySession, onDeleteStudySession,
     streak, goals, updateGoal,
-    onAddTask, onDeleteTask,
+    onAddTask, onDeleteTask, onToggleTask,
     goalCompleted = false
 }) {
     const [timeRange, setTimeRange] = useState('Week');
