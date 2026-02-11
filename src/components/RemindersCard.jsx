@@ -19,7 +19,7 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
         description: '',
         type: 'reminder', // 'reminder' | 'event' | 'meeting'
         attendees: '',
-        addToGoogleCalendar: false
+        addToGoogleCalendar: true
     });
     const [expandedId, setExpandedId] = useState(null);
 
@@ -51,7 +51,7 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
             description: rem.description || '',
             type: rem.type || 'reminder',
             attendees: rem.attendees || '',
-            addToGoogleCalendar: false
+            addToGoogleCalendar: rem.googleCalendarEventId ? true : true // Default to true for sync
         });
         setEditingId(rem.id);
         setShowAddForm(true);
@@ -314,39 +314,45 @@ function RemindersCard({ reminders, onAddReminder, onDeleteReminder, onUpdateRem
                     />
 
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        <div style={{ flex: 1, position: 'relative' }}>
-                            <Calendar size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input
-                                type="date"
-                                value={newReminder.date}
-                                onChange={(e) => setNewReminder({ ...newReminder, date: e.target.value })}
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 8px 8px 32px',
-                                    borderRadius: '8px',
-                                    backgroundColor: 'var(--bg-card)',
-                                    fontSize: '0.75rem',
-                                    border: '1px solid var(--border)',
-                                    colorScheme: 'dark'
-                                }}
-                            />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>Date</label>
+                            <div style={{ position: 'relative' }}>
+                                <Calendar size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input
+                                    type="date"
+                                    value={newReminder.date}
+                                    onChange={(e) => setNewReminder({ ...newReminder, date: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 8px 8px 32px',
+                                        borderRadius: '8px',
+                                        backgroundColor: 'var(--bg-card)',
+                                        fontSize: '0.75rem',
+                                        border: '1px solid var(--border)',
+                                        colorScheme: 'dark'
+                                    }}
+                                />
+                            </div>
                         </div>
-                        <div style={{ flex: 1, position: 'relative' }}>
-                            <Clock size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input
-                                type="time"
-                                value={newReminder.time}
-                                onChange={(e) => setNewReminder({ ...newReminder, time: e.target.value })}
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 8px 8px 32px',
-                                    borderRadius: '8px',
-                                    backgroundColor: 'var(--bg-card)',
-                                    fontSize: '0.75rem',
-                                    border: '1px solid var(--border)',
-                                    colorScheme: 'dark'
-                                }}
-                            />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '4px' }}>Time</label>
+                            <div style={{ position: 'relative' }}>
+                                <Clock size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input
+                                    type="time"
+                                    value={newReminder.time}
+                                    onChange={(e) => setNewReminder({ ...newReminder, time: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 8px 8px 32px',
+                                        borderRadius: '8px',
+                                        backgroundColor: 'var(--bg-card)',
+                                        fontSize: '0.75rem',
+                                        border: '1px solid var(--border)',
+                                        colorScheme: 'dark'
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
 

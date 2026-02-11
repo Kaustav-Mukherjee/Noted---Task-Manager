@@ -15,9 +15,10 @@ import { db } from '../firebase';
 // Tasks Collection
 export const tasksCollection = (userId) => collection(db, 'users', userId, 'tasks');
 
-export const addTask = async (userId, task) => {
+export const addTask = async (userId, taskData) => {
     const docRef = await addDoc(tasksCollection(userId), {
-        ...task,
+        ...taskData,
+        date: taskData.date || new Date().toISOString(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
     });
@@ -87,9 +88,10 @@ export const subscribeReminders = (userId, callback) => {
 // Study Sessions Collection
 export const studySessionsCollection = (userId) => collection(db, 'users', userId, 'studySessions');
 
-export const addStudySession = async (userId, session) => {
+export const addStudySession = async (userId, sessionData) => {
     const docRef = await addDoc(studySessionsCollection(userId), {
-        ...session,
+        ...sessionData,
+        date: sessionData.date || new Date().toISOString(),
         createdAt: serverTimestamp()
     });
     return docRef.id;

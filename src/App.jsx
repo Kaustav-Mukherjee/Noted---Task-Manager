@@ -158,18 +158,17 @@ function App() {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
     };
 
-    const addTask = async (text) => {
+    const addTask = async (text, date = null) => {
         const newTask = {
             text,
             completed: false,
-            date: new Date().toISOString(),
+            date: date || new Date().toISOString()
         };
 
         if (user) {
-            const id = await firestoreService.addTask(user.uid, newTask);
-            setTasks([{ id, ...newTask }, ...tasks]);
+            await firestoreService.addTask(user.uid, newTask);
         } else {
-            setTasks([{ id: Date.now().toString(), ...newTask }, ...tasks]);
+            setTasks([...tasks, { ...newTask, id: Date.now().toString() }]);
         }
     };
 
@@ -220,9 +219,9 @@ function App() {
         }
     };
 
-    const addStudySession = async (hours) => {
+    const addStudySession = async (hours, date = null) => {
         const newSession = {
-            date: new Date().toISOString(),
+            date: date || new Date().toISOString(),
             hours: parseFloat(hours)
         };
 
@@ -363,6 +362,8 @@ function App() {
                         streak={streak}
                         goals={goals}
                         updateGoal={updateGoal}
+                        onAddTask={addTask}
+                        onDeleteTask={deleteTask}
                     />
 
                 </div>
