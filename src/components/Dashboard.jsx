@@ -563,8 +563,7 @@ function Dashboard({
                 borderRadius: 'var(--radius)', 
                 border: goalCompleted ? '1px solid transparent' : '1px solid var(--border)', 
                 transition: 'all var(--transition-main)',
-                position: 'relative',
-                overflow: 'hidden'
+                position: 'relative'
             }}>
                 {/* Subtle Edge Glow Effect for Goal Completion */}
                 {goalCompleted && (
