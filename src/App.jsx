@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
@@ -279,21 +279,34 @@ function App() {
     
     // Check if goal is completed and trigger celebration
     const [hasCelebrated, setHasCelebrated] = useState(false);
+    const celebrationTimerRef = useRef(null);
     
     useEffect(() => {
-        if (todayStudyHours >= dailyGoalHours && !hasCelebrated) {
+        // Only trigger if we haven't celebrated yet today and goal is reached
+        if (todayStudyHours >= dailyGoalHours && !hasCelebrated && !celebrationTimerRef.current) {
             setHasCelebrated(true);
             setShowGoalCelebration(true);
+            
             // Auto-hide after 3 seconds
-            const timer = setTimeout(() => {
+            celebrationTimerRef.current = setTimeout(() => {
                 setShowGoalCelebration(false);
+                celebrationTimerRef.current = null;
             }, 3000);
-            return () => clearTimeout(timer);
         } else if (todayStudyHours < dailyGoalHours && hasCelebrated) {
             // Reset for next day if hours drop below goal
             setHasCelebrated(false);
             setShowGoalCelebration(false);
+            if (celebrationTimerRef.current) {
+                clearTimeout(celebrationTimerRef.current);
+                celebrationTimerRef.current = null;
+            }
         }
+        
+        return () => {
+            if (celebrationTimerRef.current) {
+                clearTimeout(celebrationTimerRef.current);
+            }
+        };
     }, [todayStudyHours, dailyGoalHours, hasCelebrated]);
 
 
