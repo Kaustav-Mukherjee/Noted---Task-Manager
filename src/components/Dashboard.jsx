@@ -53,6 +53,7 @@ function Dashboard({
         return saved ? JSON.parse(saved) : [];
     });
     const [glowingMilestones, setGlowingMilestones] = useState(new Set());
+    const [isFlameAnimating, setIsFlameAnimating] = useState(false);
 
     // Save completed milestones to localStorage
     useEffect(() => {
@@ -73,6 +74,8 @@ function Dashboard({
         if (newlyCompleted.length > 0) {
             // Trigger glow animation for newly completed milestones
             setGlowingMilestones(new Set(newlyCompleted));
+            // Trigger flame animation
+            setIsFlameAnimating(true);
             
             // Update completed milestones
             setCompletedMilestones(prev => [...prev, ...newlyCompleted]);
@@ -81,6 +84,11 @@ function Dashboard({
             setTimeout(() => {
                 setGlowingMilestones(new Set());
             }, 1500);
+
+            // Stop flame animation after it completes (1.6s = 2 iterations * 0.8s)
+            setTimeout(() => {
+                setIsFlameAnimating(false);
+            }, 1600);
         }
     }, [streak, completedMilestones]);
 
@@ -501,7 +509,7 @@ function Dashboard({
                 <div className="fade-in" style={{ padding: '20px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '20px', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                            <svg className="flame-animate" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
+                            <svg className={isFlameAnimating ? 'flame-animate' : ''} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <div style={{ fontSize: '1.4rem', fontWeight: '850', color: 'var(--text-main)', lineHeight: '1' }}>{streak}</div>
