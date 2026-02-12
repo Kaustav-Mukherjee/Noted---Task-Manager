@@ -48,37 +48,36 @@ function Dashboard({
     const [showGoalModal, setShowGoalModal] = useState(false);
 
     // Track streak milestone completions for glow animation
-    const [completedMilestones, setCompletedMilestones] = useState(() => {
-        const saved = localStorage.getItem('completedStreakMilestones');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [completedMilestones, setCompletedMilestones] = useState([]);
     const [glowingMilestones, setGlowingMilestones] = useState(new Set());
     const [isFlameAnimating, setIsFlameAnimating] = useState(false);
+    const [animatingStreak, setAnimatingStreak] = useState(false);
 
-    // Save completed milestones to localStorage
+    // Clear stored milestones on mount to allow re-animation
     useEffect(() => {
-        localStorage.setItem('completedStreakMilestones', JSON.stringify(completedMilestones));
-    }, [completedMilestones]);
+        localStorage.removeItem('completedStreakMilestones');
+    }, []);
 
-    // Check for newly completed streak milestones and trigger glow
+    // Check for streak milestones and trigger animations on mount and when streak changes
     useEffect(() => {
+        if (streak === 0 || animatingStreak) return;
+        
         const coreMilestones = [1, 7, 14];
         const monthsCount = Math.max(1, Math.floor(streak / 30) + 1);
         const monthlyMilestones = Array.from({ length: monthsCount }, (_, i) => (i + 1) * 30);
         const allMilestones = [...coreMilestones, ...monthlyMilestones];
 
-        const newlyCompleted = allMilestones.filter(days => 
-            streak >= days && !completedMilestones.includes(days)
-        );
+        const completedNow = allMilestones.filter(days => streak >= days);
 
-        if (newlyCompleted.length > 0) {
-            // Trigger glow animation for newly completed milestones
-            setGlowingMilestones(new Set(newlyCompleted));
+        if (completedNow.length > 0) {
+            setAnimatingStreak(true);
+            // Trigger glow animation for all completed milestones
+            setGlowingMilestones(new Set(completedNow));
             // Trigger flame animation
             setIsFlameAnimating(true);
             
             // Update completed milestones
-            setCompletedMilestones(prev => [...prev, ...newlyCompleted]);
+            setCompletedMilestones(completedNow);
 
             // Remove glow after animation completes (1.5s)
             setTimeout(() => {
@@ -88,9 +87,10 @@ function Dashboard({
             // Stop flame animation after it completes (1.6s = 2 iterations * 0.8s)
             setTimeout(() => {
                 setIsFlameAnimating(false);
+                setAnimatingStreak(false);
             }, 1600);
         }
-    }, [streak, completedMilestones]);
+    }, [streak]);
 
     const [showStudyModal, setShowStudyModal] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
