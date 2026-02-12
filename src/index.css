@@ -110,6 +110,59 @@ textarea {
     animation: fadeInSlideUp 0.6s var(--ease-apple) forwards;
 }
 
+/* Flame flicker animation */
+@keyframes flameFlicker {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+        filter: brightness(1) drop-shadow(0 0 2px rgba(239, 68, 68, 0.5));
+    }
+    25% {
+        transform: scale(1.05) rotate(-2deg);
+        opacity: 0.95;
+        filter: brightness(1.1) drop-shadow(0 0 4px rgba(239, 68, 68, 0.7));
+    }
+    50% {
+        transform: scale(0.95) rotate(1deg);
+        opacity: 1;
+        filter: brightness(1.05) drop-shadow(0 0 3px rgba(239, 68, 68, 0.6));
+    }
+    75% {
+        transform: scale(1.02) rotate(-1deg);
+        opacity: 0.98;
+        filter: brightness(1.08) drop-shadow(0 0 5px rgba(239, 68, 68, 0.8));
+    }
+}
+
+.flame-animate {
+    animation: flameFlicker 0.8s ease-in-out infinite;
+    transform-origin: bottom center;
+}
+
+/* Streak completion glow animation - pulses 2 times */
+@keyframes streakGlow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        border-color: rgba(239, 68, 68, 0.3);
+    }
+    25% {
+        box-shadow: 0 0 20px 8px rgba(239, 68, 68, 0.6);
+        border-color: rgba(239, 68, 68, 0.8);
+    }
+    50% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        border-color: rgba(239, 68, 68, 0.3);
+    }
+    75% {
+        box-shadow: 0 0 20px 8px rgba(239, 68, 68, 0.6);
+        border-color: rgba(239, 68, 68, 0.8);
+    }
+}
+
+.streak-glow {
+    animation: streakGlow 1.5s ease-in-out;
+}
+
 .card-hover {
     transition: transform var(--transition-main), box-shadow var(--transition-main), border-color var(--transition-main);
 }

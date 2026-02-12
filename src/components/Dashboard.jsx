@@ -47,6 +47,43 @@ function Dashboard({
     const [goalInput, setGoalInput] = useState('');
     const [showGoalModal, setShowGoalModal] = useState(false);
 
+    // Track streak milestone completions for glow animation
+    const [completedMilestones, setCompletedMilestones] = useState(() => {
+        const saved = localStorage.getItem('completedStreakMilestones');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [glowingMilestones, setGlowingMilestones] = useState(new Set());
+
+    // Save completed milestones to localStorage
+    useEffect(() => {
+        localStorage.setItem('completedStreakMilestones', JSON.stringify(completedMilestones));
+    }, [completedMilestones]);
+
+    // Check for newly completed streak milestones and trigger glow
+    useEffect(() => {
+        const coreMilestones = [1, 7, 14];
+        const monthsCount = Math.max(1, Math.floor(streak / 30) + 1);
+        const monthlyMilestones = Array.from({ length: monthsCount }, (_, i) => (i + 1) * 30);
+        const allMilestones = [...coreMilestones, ...monthlyMilestones];
+
+        const newlyCompleted = allMilestones.filter(days => 
+            streak >= days && !completedMilestones.includes(days)
+        );
+
+        if (newlyCompleted.length > 0) {
+            // Trigger glow animation for newly completed milestones
+            setGlowingMilestones(new Set(newlyCompleted));
+            
+            // Update completed milestones
+            setCompletedMilestones(prev => [...prev, ...newlyCompleted]);
+
+            // Remove glow after animation completes (1.5s)
+            setTimeout(() => {
+                setGlowingMilestones(new Set());
+            }, 1500);
+        }
+    }, [streak, completedMilestones]);
+
     const [showStudyModal, setShowStudyModal] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDateData, setSelectedDateData] = useState(null);
@@ -464,7 +501,7 @@ function Dashboard({
                 <div className="fade-in" style={{ padding: '20px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '20px', border: '1px solid var(--border)', transition: 'all var(--transition-main)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
+                            <svg className="flame-animate" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.5 3.5 6.5 1.5 2 2 4.5 2 7a6 6 0 1 1-12 0c0-3 1.5-5.5 3-7 .5 2 1 3 1 5z" /></svg>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <div style={{ fontSize: '1.4rem', fontWeight: '850', color: 'var(--text-main)', lineHeight: '1' }}>{streak}</div>
@@ -503,6 +540,7 @@ function Dashboard({
                             return allMilestones.map(({ days, label }) => (
                                 <div
                                     key={days}
+                                    className={glowingMilestones.has(days) ? 'streak-glow' : ''}
                                     style={{
                                         minWidth: '38px',
                                         padding: '6px 8px',
