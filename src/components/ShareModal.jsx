@@ -8,7 +8,8 @@ import {
     subscribeToUserSharedDashboards,
     copyShareLink,
     canAccessSharedDashboard,
-    sendInvitationEmails
+    sendInvitationEmails,
+    getEmailConfigStatus
 } from '../services/sharingService';
 
 export default function ShareModal({ isOpen, onClose }) {
@@ -23,9 +24,13 @@ export default function ShareModal({ isOpen, onClose }) {
     const [newlyCreatedDashboard, setNewlyCreatedDashboard] = useState(null);
     const [emailStatus, setEmailStatus] = useState(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [emailConfigStatus, setEmailConfigStatus] = useState(null);
 
     useEffect(() => {
         if (!user || !isOpen) return;
+
+        // Check email configuration
+        setEmailConfigStatus(getEmailConfigStatus());
 
         const unsubscribe = subscribeToUserSharedDashboards(user.uid, (dashboards) => {
             setSharedDashboards(dashboards);
@@ -82,19 +87,23 @@ export default function ShareModal({ isOpen, onClose }) {
                     console.log('Email sending results:', emailResults);
                     const successfulSends = emailResults.filter(r => r.success).length;
                     const failedSends = emailResults.filter(r => !r.success);
+                    const fallbackSends = emailResults.filter(r => r.fallback && !r.success);
                     
                     if (failedSends.length > 0) {
                         console.error('Failed emails:', failedSends);
-                        // Show alert for failed emails
-                        const failedEmails = failedSends.map(f => f.email).join(', ');
-                        alert(`Failed to send emails to: ${failedEmails}\n\nLink is still created successfully!`);
+                        // Don't show alert for fallback scenarios
+                        if (fallbackSends.length === 0) {
+                            const failedEmails = failedSends.map(f => f.email).join(', ');
+                            alert(`Failed to send emails to: ${failedEmails}\n\nLink is still created successfully! You can copy the link and share it manually.`);
+                        }
                     }
                     
                     setEmailStatus({
                         sent: successfulSends,
                         total: emailList.length,
                         results: emailResults,
-                        failed: failedSends
+                        failed: failedSends,
+                        fallback: fallbackSends
                     });
                 } catch (emailError) {
                     console.error('Error sending emails:', emailError);
@@ -130,19 +139,24 @@ export default function ShareModal({ isOpen, onClose }) {
     };
 
     const handleCopyLink = async (shareLink, id) => {
-        const success = await copyShareLink(shareLink);
-        if (success) {
+        const result = await copyShareLink(shareLink);
+        if (result.success) {
             setCopiedId(id);
             setTimeout(() => setCopiedId(null), 2000);
+        } else {
+            // Show error with manual copy instructions
+            alert(result.error || 'Failed to copy link. Please select and copy the link manually.');
         }
     };
 
     const handleCopyNewLink = async () => {
         if (newlyCreatedDashboard) {
-            const success = await copyShareLink(newlyCreatedDashboard.shareLink);
-            if (success) {
+            const result = await copyShareLink(newlyCreatedDashboard.shareLink);
+            if (result.success) {
                 setCopiedId('new');
                 setTimeout(() => setCopiedId(null), 2000);
+            } else {
+                alert(result.error || 'Failed to copy link. Please select and copy the link manually.');
             }
         }
     };
@@ -555,6 +569,24 @@ export default function ShareModal({ isOpen, onClose }) {
                                 </div>
                             </div>
 
+                            {/* Email Configuration Warning */}
+                            {emailConfigStatus && !emailConfigStatus.configured && (
+                                <div style={{
+                                    padding: '10px 12px',
+                                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                                    borderRadius: '8px',
+                                    fontSize: '0.8rem',
+                                    color: '#f59e0b',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span>⚠️</span>
+                                    <span>Email service not configured. You'll need to copy the link and share it manually, or use the mailto links that will be provided.</span>
+                                </div>
+                            )}
+
                             <div>
                                 <label style={{
                                     display: 'block',
@@ -568,7 +600,7 @@ export default function ShareModal({ isOpen, onClose }) {
                                 <textarea
                                     value={allowedEmails}
                                     onChange={(e) => setAllowedEmails(e.target.value)}
-                                    placeholder="Enter email addresses separated by commas (invitation emails will be sent automatically)"
+                                    placeholder="Enter email addresses separated by commas (invitation emails will be sent automatically when configured)"
                                     rows={3}
                                     style={{
                                         width: '100%',
@@ -586,7 +618,9 @@ export default function ShareModal({ isOpen, onClose }) {
                                     color: 'var(--text-muted)',
                                     marginTop: '6px'
                                 }}>
-                                    Invitation emails will be sent automatically. Leave empty to allow anyone with the link to access.
+                                    {emailConfigStatus?.configured 
+                                        ? 'Invitation emails will be sent automatically. Leave empty to allow anyone with the link to access.'
+                                        : 'Emails will not be sent automatically. You will need to copy the link and share it manually or use the provided mailto links.'}
                                 </p>
                             </div>
 
@@ -692,7 +726,48 @@ export default function ShareModal({ isOpen, onClose }) {
                                         </div>
                                     ))}
                                     <div style={{ marginTop: '8px', color: 'var(--text-muted)' }}>
-                                        Check console for details. Link is still created and can be shared manually.
+                                        Link is still created and can be shared manually or via email below.
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Show fallback mailto links */}
+                            {emailStatus.fallback?.length > 0 && (
+                                <div style={{
+                                    padding: '12px',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                                    borderRadius: '8px',
+                                    marginBottom: '20px',
+                                    fontSize: '0.8rem'
+                                }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '8px', color: '#3b82f6' }}>
+                                        Send emails manually:
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {emailStatus.fallback.map((fallback, idx) => (
+                                            <a
+                                                key={idx}
+                                                href={fallback.mailtoLink}
+                                                style={{
+                                                    color: '#3b82f6',
+                                                    textDecoration: 'none',
+                                                    padding: '6px 10px',
+                                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                    borderRadius: '6px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}
+                                                onClick={(e) => {
+                                                    // Open in new window for better compatibility
+                                                    window.open(fallback.mailtoLink, '_blank');
+                                                    e.preventDefault();
+                                                }}
+                                            >
+                                                <Mail size={14} />
+                                                Email {fallback.email}
+                                            </a>
+                                        ))}
                                     </div>
                                 </div>
                             )}
