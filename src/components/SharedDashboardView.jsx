@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Lock, AlertCircle, Users, CheckCircle2, Calendar, BookOpen, Target, Flame, Zap, Play, Pause, RotateCcw, Youtube, Music } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,8 +20,27 @@ function SharedFocusTimerDisplay({ timerState }) {
     const [mode, setMode] = useState('FOCUS');
     const [isActive, setIsActive] = useState(false);
     const [customDuration, setCustomDuration] = useState(25);
+    const lastUpdateRef = useRef(Date.now());
 
-    // Sync with owner's timer state
+    // Calculate time based on owner's timestamp - recalculate every 100ms for accuracy
+    useEffect(() => {
+        let interval = null;
+        
+        if (isActive) {
+            interval = setInterval(() => {
+                // Always recalculate from the original timestamp to avoid drift
+                if (timerState && timerState.startTime && timerState.timeLeft) {
+                    const elapsedSinceStart = Math.floor((Date.now() - timerState.startTime) / 1000);
+                    const newTimeLeft = Math.max(0, timerState.timeLeft - elapsedSinceStart);
+                    setDisplayTime(newTimeLeft);
+                }
+            }, 100); // Update 10 times per second for smooth display
+        }
+        
+        return () => clearInterval(interval);
+    }, [isActive, timerState]);
+
+    // Sync with owner's timer state when it changes
     useEffect(() => {
         if (timerState) {
             console.log('Shared Timer: Received state:', timerState);
@@ -43,19 +62,9 @@ function SharedFocusTimerDisplay({ timerState }) {
                 baseTimeLeft = Math.max(0, timerState.timeLeft - elapsedSinceStart);
             }
             setDisplayTime(baseTimeLeft);
+            lastUpdateRef.current = Date.now();
         }
     }, [timerState]);
-
-    // Update display time every second if timer is active
-    useEffect(() => {
-        let interval = null;
-        if (isActive && displayTime > 0) {
-            interval = setInterval(() => {
-                setDisplayTime(time => Math.max(0, time - 1));
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [isActive, displayTime]);
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
