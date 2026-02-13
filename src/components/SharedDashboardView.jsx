@@ -1,10 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, AlertCircle, Users, CheckCircle2, Calendar, BookOpen, Target, Flame } from 'lucide-react';
+import { ArrowLeft, Lock, AlertCircle, Users, CheckCircle2, Calendar, BookOpen, Target, Flame, Zap, Play, Pause, RotateCcw, Youtube, Music } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './AuthModal';
-import FocusTimer from './FocusTimer';
-import YouTubeNowPlaying from './YouTubeNowPlaying';
 import * as firestoreService from '../services/firestoreService';
 import { format, isSameDay, subDays, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
@@ -15,6 +13,270 @@ const parseSafeDate = (dateVal) => {
     const d = new Date(dateVal);
     return isNaN(d.getTime()) ? null : d;
 };
+
+// Simple Focus Timer for Shared View
+function SharedFocusTimer({ onTimerComplete }) {
+    const [timeLeft, setTimeLeft] = useState(25 * 60);
+    const [isActive, setIsActive] = useState(false);
+    const [mode, setMode] = useState('focus');
+
+    useEffect(() => {
+        let interval = null;
+        if (isActive && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft(time => {
+                    if (time <= 1) {
+                        setIsActive(false);
+                        onTimerComplete && onTimerComplete(25/60);
+                        return 25 * 60;
+                    }
+                    return time - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isActive, timeLeft, onTimerComplete]);
+
+    const toggleTimer = () => setIsActive(!isActive);
+    const resetTimer = () => {
+        setIsActive(false);
+        setTimeLeft(mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60);
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const progress = ((mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60) - timeLeft) / (mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60) * 100;
+
+    return (
+        <div style={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '24px',
+            gap: '20px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Zap size={16} color="#8b5cf6" />
+                <h3 style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Focus Session
+                </h3>
+            </div>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+                {/* Circular Progress */}
+                <div style={{ position: 'relative', width: '180px', height: '180px' }}>
+                    <svg width="180" height="180" viewBox="0 0 180 180">
+                        <circle cx="90" cy="90" r="80" fill="none" stroke="var(--border)" strokeWidth="8" />
+                        <circle 
+                            cx="90" 
+                            cy="90" 
+                            r="80" 
+                            fill="none" 
+                            stroke="#8b5cf6" 
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            strokeDasharray={`${2 * Math.PI * 80}`}
+                            strokeDashoffset={`${2 * Math.PI * 80 * (1 - progress / 100)}`}
+                            transform="rotate(-90 90 90)"
+                            style={{ transition: 'stroke-dashoffset 1s linear' }}
+                        />
+                    </svg>
+                    <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: '2.5rem', fontWeight: '300', color: 'var(--text-main)' }}>
+                            {formatTime(timeLeft)}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                            {mode === 'focus' ? 'Focus' : mode === 'short' ? 'Short Break' : 'Long Break'}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Controls */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                        onClick={toggleTimer}
+                        style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            backgroundColor: '#8b5cf6',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {isActive ? <Pause size={24} color="white" /> : <Play size={24} color="white" />}
+                    </button>
+                    <button
+                        onClick={resetTimer}
+                        style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--bg-hover)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid var(--border)',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <RotateCcw size={24} color="var(--text-muted)" />
+                    </button>
+                </div>
+
+                {/* Mode Selector */}
+                <div style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--bg-hover)', padding: '4px', borderRadius: '10px' }}>
+                    {['focus', 'short', 'long'].map((m) => (
+                        <button
+                            key={m}
+                            onClick={() => {
+                                setMode(m);
+                                setTimeLeft(m === 'focus' ? 25 * 60 : m === 'short' ? 5 * 60 : 15 * 60);
+                                setIsActive(false);
+                            }}
+                            style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                backgroundColor: mode === m ? 'var(--bg-card)' : 'transparent',
+                                color: mode === m ? 'var(--text-main)' : 'var(--text-muted)',
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {m === 'focus' ? 'Focus' : m === 'short' ? 'Short' : 'Long'}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Simple Now Playing for Shared View
+function SharedNowPlaying() {
+    const [videoId, setVideoId] = useState('jfKfPfyJRdk');
+    const [tempUrl, setTempUrl] = useState('');
+    const [showInput, setShowInput] = useState(false);
+
+    const extractVideoId = (url) => {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
+    const handleUpdateVideo = (e) => {
+        e.preventDefault();
+        const id = extractVideoId(tempUrl);
+        if (id) {
+            setVideoId(id);
+            setShowInput(false);
+            setTempUrl('');
+        } else if (tempUrl.length === 11) {
+            setVideoId(tempUrl);
+            setShowInput(false);
+            setTempUrl('');
+        }
+    };
+
+    return (
+        <div style={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px',
+            gap: '12px'
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Youtube size={20} color="#ff0000" />
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Now Playing</h3>
+                </div>
+                <button
+                    onClick={() => setShowInput(!showInput)}
+                    style={{
+                        padding: '8px',
+                        borderRadius: '8px',
+                        backgroundColor: showInput ? 'var(--text-main)' : 'var(--bg-hover)',
+                        color: showInput ? 'var(--bg-app)' : 'var(--text-muted)',
+                        border: 'none',
+                        cursor: 'pointer'
+                    }}
+                >
+                    {showInput ? '✕' : '🔗'}
+                </button>
+            </div>
+
+            {showInput && (
+                <form onSubmit={handleUpdateVideo} style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                        type="text"
+                        placeholder="YouTube URL or ID"
+                        value={tempUrl}
+                        onChange={(e) => setTempUrl(e.target.value)}
+                        style={{
+                            flex: 1,
+                            padding: '10px',
+                            backgroundColor: 'var(--bg-hover)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            color: 'var(--text-main)'
+                        }}
+                    />
+                    <button 
+                        type="submit"
+                        style={{
+                            padding: '10px 16px',
+                            backgroundColor: 'var(--text-main)',
+                            color: 'var(--bg-app)',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            border: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Set
+                    </button>
+                </form>
+            )}
+
+            <div style={{
+                flex: 1,
+                minHeight: '200px',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                backgroundColor: '#000'
+            }}>
+                <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&rel=0&modestbranding=1`}
+                    title="YouTube"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ border: 'none' }}
+                />
+            </div>
+        </div>
+    );
+}
 
 export default function SharedDashboardView() {
     const { shareId } = useParams();
@@ -34,16 +296,13 @@ export default function SharedDashboardView() {
     const [error, setError] = useState(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
     
-    // Data states for shared dashboard
+    // Data states
     const [tasks, setTasks] = useState([]);
-    const [reminders, setReminders] = useState([]);
-    const [notes, setNotes] = useState([]);
-    const [folders, setFolders] = useState([]);
     const [studySessions, setStudySessions] = useState([]);
     const [goals, setGoals] = useState({});
     const [streak, setStreak] = useState(0);
 
-    // Load shared dashboard on mount
+    // Load shared dashboard
     useEffect(() => {
         const initSharedDashboard = async () => {
             if (!shareId) {
@@ -69,111 +328,74 @@ export default function SharedDashboardView() {
         };
     }, [shareId]);
 
-    // Subscribe to shared data when dashboard is loaded
+    // Subscribe to data
     useEffect(() => {
-        if (!isSharedMode || !sharedDashboardOwnerId || !canAccessShared) {
-            console.log('SharedDashboard: Not loading data - conditions not met', {
-                isSharedMode,
-                sharedDashboardOwnerId,
-                canAccessShared
-            });
-            return;
-        }
+        if (!isSharedMode || !sharedDashboardOwnerId || !canAccessShared) return;
 
         const ownerId = sharedDashboardOwnerId;
-        console.log('SharedDashboard: Loading data for owner:', ownerId);
 
         const unsubTasks = firestoreService.subscribeSharedTasks(ownerId, (data) => {
-            console.log('SharedDashboard: Tasks loaded:', data.length);
-            setTasks(data);
-        });
-
-        const unsubReminders = firestoreService.subscribeSharedReminders(ownerId, (data) => {
-            console.log('SharedDashboard: Reminders loaded:', data.length);
-            setReminders(data);
+            setTasks(data || []);
         });
 
         const unsubStudy = firestoreService.subscribeSharedStudySessions(ownerId, (data) => {
-            console.log('SharedDashboard: Study sessions loaded:', data.length);
-            setStudySessions(data);
-        });
-
-        const unsubNotes = firestoreService.subscribeSharedStickyNotes(ownerId, (data) => {
-            console.log('SharedDashboard: Notes loaded:', data.length);
-            setNotes(data);
-        });
-
-        const unsubFolders = firestoreService.subscribeSharedFolders(ownerId, (data) => {
-            console.log('SharedDashboard: Folders loaded:', data.length);
-            setFolders(data);
+            setStudySessions(data || []);
         });
 
         const unsubGoals = firestoreService.subscribeSharedGoals(ownerId, (data) => {
-            console.log('SharedDashboard: Goals loaded:', data);
             setGoals(data || {});
         });
 
-        // Calculate streak from tasks
-        const calculateStreak = () => {
-            const today = new Date();
-            let currentStreak = 0;
-            
-            console.log('SharedDashboard: Calculating streak from', tasks.length, 'tasks');
-            
-            for (let i = 0; i < 365; i++) {
-                const checkDate = subDays(today, i);
-                const dayTasks = tasks.filter(t => {
-                    const taskDate = parseSafeDate(t.date);
-                    return taskDate && isSameDay(taskDate, checkDate);
-                });
-                
-                if (dayTasks.length > 0 && dayTasks.every(t => t.completed)) {
-                    currentStreak++;
-                } else if (i === 0 && dayTasks.length === 0) {
-                    // If today has no tasks, don't break streak
-                    continue;
-                } else {
-                    break;
-                }
-            }
-            
-            console.log('SharedDashboard: Streak calculated:', currentStreak);
-            setStreak(currentStreak);
-        };
-
-        if (tasks.length > 0) {
-            calculateStreak();
-        } else {
-            setStreak(0);
-        }
-
         return () => {
             unsubTasks();
-            unsubReminders();
             unsubStudy();
-            unsubNotes();
-            unsubFolders();
             unsubGoals();
         };
-    }, [isSharedMode, sharedDashboardOwnerId, canAccessShared, tasks]);
+    }, [isSharedMode, sharedDashboardOwnerId, canAccessShared]);
 
-    // Computed statistics
+    // Calculate streak
+    useEffect(() => {
+        if (tasks.length === 0) {
+            setStreak(0);
+            return;
+        }
+
+        const today = new Date();
+        let currentStreak = 0;
+        
+        for (let i = 0; i < 365; i++) {
+            const checkDate = subDays(today, i);
+            const dayTasks = tasks.filter(t => {
+                const taskDate = parseSafeDate(t.date);
+                return taskDate && isSameDay(taskDate, checkDate);
+            });
+            
+            if (dayTasks.length > 0 && dayTasks.every(t => t.completed)) {
+                currentStreak++;
+            } else if (i === 0 && dayTasks.length === 0) {
+                continue;
+            } else {
+                break;
+            }
+        }
+        
+        setStreak(currentStreak);
+    }, [tasks]);
+
+    // Stats
     const stats = useMemo(() => {
         const today = new Date();
         const completedTasks = tasks.filter(t => t.completed).length;
         const totalTasks = tasks.length;
         const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         
-        // Today's tasks
         const todayTasks = tasks.filter(t => {
             const taskDate = parseSafeDate(t.date);
             return taskDate && isSameDay(taskDate, today);
         });
         
-        // Study hours total
         const totalStudyHours = studySessions.reduce((sum, s) => sum + (parseFloat(s.hours) || 0), 0);
         
-        // Recent study sessions (last 7 days)
         const last7Days = eachDayOfInterval({ start: subDays(today, 6), end: today });
         const studyGraphData = last7Days.map(day => ({
             name: format(day, 'EEE'),
@@ -185,7 +407,6 @@ export default function SharedDashboardView() {
                 .reduce((sum, s) => sum + (parseFloat(s.hours) || 0), 0)
         }));
         
-        // Task activity for last 7 days
         const taskGraphData = last7Days.map(day => ({
             name: format(day, 'EEE'),
             completed: tasks.filter(t => {
@@ -210,7 +431,6 @@ export default function SharedDashboardView() {
         };
     }, [tasks, studySessions]);
 
-    // Handle timer completion
     const handleTimerComplete = (hours) => {
         if (canEditShared && sharedDashboardOwnerId) {
             firestoreService.addSharedStudySession(sharedDashboardOwnerId, {
@@ -241,11 +461,7 @@ export default function SharedDashboardView() {
                     }} />
                     <p style={{ color: 'var(--text-muted)' }}>Loading shared dashboard...</p>
                 </div>
-                <style>{`
-                    @keyframes spin {
-                        to { transform: rotate(360deg); }
-                    }
-                `}</style>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         );
     }
@@ -276,9 +492,7 @@ export default function SharedDashboardView() {
                     <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '12px' }}>
                         Access Denied
                     </h2>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-                        {error}
-                    </p>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>{error}</p>
                     <button
                         onClick={() => navigate('/')}
                         style={{
@@ -291,7 +505,6 @@ export default function SharedDashboardView() {
                             cursor: 'pointer'
                         }}
                     >
-                        <ArrowLeft size={18} style={{ marginRight: '8px', display: 'inline' }} />
                         Go Home
                     </button>
                 </div>
@@ -394,7 +607,7 @@ export default function SharedDashboardView() {
                 </div>
             )}
 
-            {/* Main Content - Bento Grid */}
+            {/* Main Content */}
             <main style={{
                 flex: 1,
                 padding: '24px',
@@ -440,7 +653,7 @@ export default function SharedDashboardView() {
                         </div>
                     </div>
 
-                    {/* Tasks Overview - Large */}
+                    {/* Tasks Overview */}
                     <div style={{
                         gridColumn: 'span 5',
                         gridRow: 'span 2',
@@ -572,7 +785,7 @@ export default function SharedDashboardView() {
                         </div>
                     </div>
 
-                    {/* Focus Timer */}
+                    {/* Focus Timer - Using simplified version */}
                     <div style={{
                         gridColumn: 'span 4',
                         gridRow: 'span 2',
@@ -582,10 +795,10 @@ export default function SharedDashboardView() {
                         overflow: 'hidden',
                         minHeight: '400px'
                     }}>
-                        <FocusTimer onTimerComplete={handleTimerComplete} />
+                        <SharedFocusTimer onTimerComplete={handleTimerComplete} />
                     </div>
 
-                    {/* Now Playing */}
+                    {/* Now Playing - Using simplified version */}
                     <div style={{
                         gridColumn: 'span 5',
                         gridRow: 'span 2',
@@ -595,7 +808,7 @@ export default function SharedDashboardView() {
                         overflow: 'hidden',
                         minHeight: '400px'
                     }}>
-                        <YouTubeNowPlaying />
+                        <SharedNowPlaying />
                     </div>
 
                     {/* Daily Goals */}
@@ -671,7 +884,7 @@ export default function SharedDashboardView() {
                         </div>
                     </div>
 
-                    {/* Recent Tasks List - Full Width */}
+                    {/* Recent Tasks */}
                     <div style={{
                         gridColumn: 'span 12',
                         backgroundColor: 'var(--bg-card)',
@@ -769,18 +982,6 @@ export default function SharedDashboardView() {
                     main > div > div {
                         grid-column: span 1 !important;
                         grid-row: span 1 !important;
-                    }
-                }
-                
-                @media (max-width: 640px) {
-                    header {
-                        padding: 12px 16px !important;
-                    }
-                    main {
-                        padding: 16px !important;
-                    }
-                    h1 {
-                        font-size: 1rem !important;
                     }
                 }
             `}</style>
