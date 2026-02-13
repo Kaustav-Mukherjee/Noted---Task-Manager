@@ -181,25 +181,12 @@ export const copyShareLink = async (shareLink) => {
     }
 };
 
-// Initialize EmailJS
-let emailjsInitialized = false;
-const initializeEmailJS = () => {
-    if (!emailjsInitialized && EMAILJS_PUBLIC_KEY) {
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-        emailjsInitialized = true;
-        console.log('EmailJS initialized successfully');
-    }
-};
-
 // Send invitation email using EmailJS
 export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTitle, ownerEmail, permissions) => {
-    // Initialize EmailJS first
-    initializeEmailJS();
-    
     // Check if EmailJS is configured
     if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
         console.warn('EmailJS not configured. Service ID:', EMAILJS_SERVICE_ID, 'Template ID:', EMAILJS_TEMPLATE_ID, 'Public Key exists:', !!EMAILJS_PUBLIC_KEY);
-        return { success: false, error: 'Email service not configured' };
+        return { success: false, error: 'Email service not configured - missing credentials' };
     }
 
     try {
@@ -215,12 +202,18 @@ export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTi
             time: new Date().toLocaleString()
         };
 
-        console.log('Sending email to:', recipientEmail, 'with params:', templateParams);
+        console.log('Sending email to:', recipientEmail);
+        console.log('Service ID:', EMAILJS_SERVICE_ID);
+        console.log('Template ID:', EMAILJS_TEMPLATE_ID);
+        console.log('Public Key:', EMAILJS_PUBLIC_KEY.substring(0, 10) + '...');
+        console.log('Template params:', templateParams);
 
+        // Use send with public key as 4th parameter (recommended approach)
         const response = await emailjs.send(
             EMAILJS_SERVICE_ID,
             EMAILJS_TEMPLATE_ID,
-            templateParams
+            templateParams,
+            EMAILJS_PUBLIC_KEY
         );
 
         console.log('Email sent successfully to', recipientEmail, ':', response);
@@ -228,11 +221,11 @@ export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTi
     } catch (error) {
         console.error('Failed to send email to', recipientEmail, ':', error);
         console.error('Error details:', {
-            message: error.message,
-            text: error.text,
-            status: error.status
+            message: error?.message,
+            text: error?.text,
+            status: error?.status
         });
-        return { success: false, error: error.message || error.text || 'Unknown error' };
+        return { success: false, error: error?.message || error?.text || 'Unknown error' };
     }
 };
 

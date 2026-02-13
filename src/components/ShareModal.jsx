@@ -35,7 +35,16 @@ export default function ShareModal({ isOpen, onClose }) {
     }, [user, isOpen]);
 
     const handleCreateDashboard = async () => {
-        if (!user) return;
+        if (!user) {
+            alert('Please sign in first');
+            return;
+        }
+        
+        if (!newDashboardTitle.trim()) {
+            alert('Please enter a dashboard title');
+            return;
+        }
+        
         setLoading(true);
         setEmailStatus(null);
         
@@ -43,7 +52,10 @@ export default function ShareModal({ isOpen, onClose }) {
             const emailList = allowedEmails
                 .split(',')
                 .map(email => email.trim())
-                .filter(email => email.length > 0);
+                .filter(email => email.length > 0 && email.includes('@'));
+
+            console.log('Creating dashboard with title:', newDashboardTitle);
+            console.log('Email list:', emailList);
 
             const newDashboard = await createSharedDashboard(user.uid, {
                 title: newDashboardTitle,
@@ -51,36 +63,60 @@ export default function ShareModal({ isOpen, onClose }) {
                 allowedEmails: emailList
             });
             
+            console.log('Dashboard created:', newDashboard);
+            
             // Send invitation emails if email addresses are provided
             if (emailList.length > 0) {
                 setEmailStatus('sending');
                 console.log('Starting to send emails to:', emailList);
-                const emailResults = await sendInvitationEmails(
-                    emailList,
-                    newDashboard.shareLink,
-                    newDashboardTitle,
-                    user.email,
-                    newDashboardPermissions
-                );
                 
-                console.log('Email sending results:', emailResults);
-                const successfulSends = emailResults.filter(r => r.success).length;
-                const failedSends = emailResults.filter(r => !r.success);
-                
-                if (failedSends.length > 0) {
-                    console.error('Failed emails:', failedSends);
+                try {
+                    const emailResults = await sendInvitationEmails(
+                        emailList,
+                        newDashboard.shareLink,
+                        newDashboardTitle,
+                        user.email,
+                        newDashboardPermissions
+                    );
+                    
+                    console.log('Email sending results:', emailResults);
+                    const successfulSends = emailResults.filter(r => r.success).length;
+                    const failedSends = emailResults.filter(r => !r.success);
+                    
+                    if (failedSends.length > 0) {
+                        console.error('Failed emails:', failedSends);
+                        // Show alert for failed emails
+                        const failedEmails = failedSends.map(f => f.email).join(', ');
+                        alert(`Failed to send emails to: ${failedEmails}\n\nLink is still created successfully!`);
+                    }
+                    
+                    setEmailStatus({
+                        sent: successfulSends,
+                        total: emailList.length,
+                        results: emailResults,
+                        failed: failedSends
+                    });
+                } catch (emailError) {
+                    console.error('Error sending emails:', emailError);
+                    alert('Dashboard created but failed to send emails: ' + emailError.message);
+                    setEmailStatus({
+                        sent: 0,
+                        total: emailList.length,
+                        results: [],
+                        failed: emailList.map(email => ({ email, error: emailError.message }))
+                    });
                 }
-                
-                setEmailStatus({
-                    sent: successfulSends,
-                    total: emailList.length,
-                    results: emailResults,
-                    failed: failedSends
-                });
             }
             
+            console.log('Showing success modal with link:', newDashboard.shareLink);
             setNewlyCreatedDashboard(newDashboard);
             setShowSuccessModal(true);
+            
+            // Force show alert to confirm
+            setTimeout(() => {
+                alert(`Share link created successfully!\n\nLink: ${newDashboard.shareLink}\n\nYou can now copy the link from the modal.`);
+            }, 100);
+            
             setIsCreating(false);
             setNewDashboardTitle('My Dashboard');
             setNewDashboardPermissions('view');
@@ -578,17 +614,20 @@ export default function ShareModal({ isOpen, onClose }) {
             {/* Success Modal - Shows after creating link */}
             {showSuccessModal && newlyCreatedDashboard && (
                 <div style={{
-                    position: 'absolute',
-                    inset: 0,
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     backgroundColor: 'var(--bg-card)',
-                    borderRadius: '20px',
-                    padding: '32px',
+                    padding: '40px 24px',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    zIndex: 10
+                    zIndex: 100,
+                    borderRadius: '20px'
                 }}>
                     <div style={{
                         width: '64px',
