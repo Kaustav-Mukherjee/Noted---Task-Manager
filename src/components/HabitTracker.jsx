@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Plus, Edit2, Trash2, Target, TrendingUp, Calendar, CheckCircle2, Circle, MoreHorizontal, Palette } from 'lucide-react';
 import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
 import { 
     subscribeHabits, 
@@ -11,6 +11,112 @@ import {
     deleteHabit, 
     toggleHabitCompletion 
 } from '../services/firestoreService';
+
+// Apple-style animations CSS
+const appleAnimations = `
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.apple-card {
+    animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.apple-chart {
+    animation: scaleIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.apple-tooltip {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+}
+
+[data-theme="dark"] .apple-tooltip {
+    background: rgba(30, 30, 30, 0.9) !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.apple-pie-segment {
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+}
+
+.apple-pie-segment:hover {
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2));
+    transform: scale(1.02);
+}
+
+.apple-glow {
+    filter: drop-shadow(0 0 20px currentColor);
+}
+
+.apple-line-chart {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+}
+
+.apple-stat-card {
+    animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation-delay: calc(var(--index) * 0.1s);
+    opacity: 0;
+}
+`;
 
 const HABIT_COLORS = [
     '#3b82f6', // blue
@@ -206,17 +312,110 @@ function HabitTracker({ isOpen, onClose }) {
 
     if (!isOpen) return null;
 
+    // Custom tooltip component for Apple-style appearance
+    const CustomPieTooltip = ({ active, payload }) => {
+        if (active && payload && payload.length) {
+            const data = payload[0];
+            return (
+                <div style={{
+                    backgroundColor: 'var(--bg-card)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    color: 'var(--text-main)',
+                    minWidth: '120px'
+                }}>
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        marginBottom: '4px'
+                    }}>
+                        <div style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            backgroundColor: data.payload.color
+                        }} />
+                        <span>{data.name}</span>
+                    </div>
+                    <div style={{ 
+                        fontSize: '1.2rem', 
+                        fontWeight: '700',
+                        color: data.payload.color
+                    }}>
+                        {data.value} days
+                    </div>
+                    <div style={{ 
+                        fontSize: '0.75rem', 
+                        color: 'var(--text-muted)',
+                        marginTop: '2px'
+                    }}>
+                        {Math.round((data.value / 30) * 100)}% of month
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    // Custom tooltip for line chart
+    const CustomLineTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            const isCompleted = payload[0].value === 1;
+            return (
+                <div style={{
+                    backgroundColor: 'var(--bg-card)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                    fontSize: '0.85rem'
+                }}>
+                    <div style={{ fontWeight: '600', marginBottom: '4px', color: 'var(--text-main)' }}>
+                        {label}
+                    </div>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: '700',
+                        color: isCompleted ? '#22c55e' : '#ef4444'
+                    }}>
+                        <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: isCompleted ? '#22c55e' : '#ef4444'
+                        }} />
+                        {isCompleted ? 'Completed ✓' : 'Missed ✗'}
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
-        <div style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '20px'
-        }}>
+        <>
+            <style>{appleAnimations}</style>
+            <div style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                padding: '20px'
+            }}>
             <div style={{
                 backgroundColor: 'var(--bg-card)',
                 borderRadius: '24px',
@@ -618,42 +817,60 @@ function HabitTracker({ isOpen, onClose }) {
                                                     gap: '20px'
                                                 }}>
                                                     {/* Pie Chart */}
-                                                    <div style={{
-                                                        backgroundColor: 'var(--bg-input)',
-                                                        borderRadius: '16px',
-                                                        padding: '20px'
-                                                    }}>
+                                                    <div 
+                                                        className="apple-card"
+                                                        style={{
+                                                            backgroundColor: 'var(--bg-input)',
+                                                            borderRadius: '20px',
+                                                            padding: '24px',
+                                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                                                            border: '1px solid var(--border)'
+                                                        }}
+                                                    >
                                                         <h4 style={{
                                                             fontSize: '0.9rem',
                                                             fontWeight: '600',
-                                                            marginBottom: '16px',
-                                                            textAlign: 'center'
+                                                            marginBottom: '20px',
+                                                            textAlign: 'center',
+                                                            color: 'var(--text-main)',
+                                                            letterSpacing: '-0.01em'
                                                         }}>
                                                             Last 30 Days
                                                         </h4>
-                                                        <div style={{ height: '200px' }}>
+                                                        <div style={{ height: '220px' }}>
                                                             <ResponsiveContainer width="100%" height="100%">
                                                                 <PieChart>
                                                                     <Pie
                                                                         data={pieData}
                                                                         cx="50%"
                                                                         cy="50%"
-                                                                        innerRadius={50}
-                                                                        outerRadius={80}
-                                                                        paddingAngle={5}
+                                                                        innerRadius={55}
+                                                                        outerRadius={85}
+                                                                        paddingAngle={3}
                                                                         dataKey="value"
+                                                                        animationBegin={0}
+                                                                        animationDuration={1000}
+                                                                        animationEasing="ease-out"
+                                                                        isAnimationActive={true}
+                                                                        className="apple-pie-segment"
                                                                     >
                                                                         {pieData.map((entry, index) => (
-                                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                                            <Cell 
+                                                                                key={`cell-${index}`} 
+                                                                                fill={entry.color}
+                                                                                stroke="var(--bg-input)"
+                                                                                strokeWidth={3}
+                                                                                className="apple-pie-segment"
+                                                                                style={{
+                                                                                    filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15))',
+                                                                                    cursor: 'pointer'
+                                                                                }}
+                                                                            />
                                                                         ))}
                                                                     </Pie>
-                                                                    <Tooltip
-                                                                        contentStyle={{
-                                                                            backgroundColor: 'var(--bg-card)',
-                                                                            border: '1px solid var(--border)',
-                                                                            borderRadius: '8px',
-                                                                            fontSize: '0.8rem'
-                                                                        }}
+                                                                    <Tooltip 
+                                                                        content={<CustomPieTooltip />}
+                                                                        wrapperStyle={{ outline: 'none' }}
                                                                     />
                                                                 </PieChart>
                                                             </ResponsiveContainer>
@@ -661,28 +878,44 @@ function HabitTracker({ isOpen, onClose }) {
                                                         <div style={{
                                                             display: 'flex',
                                                             justifyContent: 'center',
-                                                            gap: '20px',
-                                                            marginTop: '12px'
+                                                            gap: '24px',
+                                                            marginTop: '16px'
                                                         }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <div style={{ 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                gap: '8px',
+                                                                padding: '8px 14px',
+                                                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                                                borderRadius: '10px'
+                                                            }}>
                                                                 <div style={{
                                                                     width: '10px',
                                                                     height: '10px',
                                                                     borderRadius: '50%',
-                                                                    backgroundColor: '#22c55e'
+                                                                    backgroundColor: '#22c55e',
+                                                                    boxShadow: '0 0 8px rgba(34, 197, 94, 0.5)'
                                                                 }} />
-                                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                <span style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: '600' }}>
                                                                     {completedCount} Completed
                                                                 </span>
                                                             </div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <div style={{ 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                gap: '8px',
+                                                                padding: '8px 14px',
+                                                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                                                borderRadius: '10px'
+                                                            }}>
                                                                 <div style={{
                                                                     width: '10px',
                                                                     height: '10px',
                                                                     borderRadius: '50%',
-                                                                    backgroundColor: '#ef4444'
+                                                                    backgroundColor: '#ef4444',
+                                                                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)'
                                                                 }} />
-                                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                <span style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '600' }}>
                                                                     {missedCount} Missed
                                                                 </span>
                                                             </div>
@@ -712,89 +945,131 @@ function HabitTracker({ isOpen, onClose }) {
                                                             gap: '12px',
                                                             flex: 1
                                                         }}>
-                                                            <div style={{
-                                                                backgroundColor: 'var(--bg-card)',
-                                                                borderRadius: '12px',
-                                                                padding: '16px',
-                                                                textAlign: 'center'
-                                                            }}>
+                                                            <div 
+                                                                className="apple-stat-card"
+                                                                style={{
+                                                                    backgroundColor: 'var(--bg-card)',
+                                                                    borderRadius: '16px',
+                                                                    padding: '20px',
+                                                                    textAlign: 'center',
+                                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.05)',
+                                                                    border: '1px solid var(--border)',
+                                                                    '--index': 0
+                                                                }}
+                                                            >
                                                                 <div style={{
-                                                                    fontSize: '1.75rem',
-                                                                    fontWeight: '700',
-                                                                    color: selectedHabitForStats.color
+                                                                    fontSize: '2rem',
+                                                                    fontWeight: '800',
+                                                                    color: selectedHabitForStats.color,
+                                                                    letterSpacing: '-0.02em',
+                                                                    textShadow: `0 0 20px ${selectedHabitForStats.color}40`
                                                                 }}>
                                                                     {calculateStreak(selectedHabitForStats.id)}
                                                                 </div>
                                                                 <div style={{
                                                                     fontSize: '0.7rem',
                                                                     color: 'var(--text-muted)',
-                                                                    marginTop: '4px'
+                                                                    marginTop: '6px',
+                                                                    fontWeight: '600',
+                                                                    letterSpacing: '0.02em',
+                                                                    textTransform: 'uppercase'
                                                                 }}>
                                                                     Current Streak
                                                                 </div>
                                                             </div>
                                                             
-                                                            <div style={{
-                                                                backgroundColor: 'var(--bg-card)',
-                                                                borderRadius: '12px',
-                                                                padding: '16px',
-                                                                textAlign: 'center'
-                                                            }}>
+                                                            <div 
+                                                                className="apple-stat-card"
+                                                                style={{
+                                                                    backgroundColor: 'var(--bg-card)',
+                                                                    borderRadius: '16px',
+                                                                    padding: '20px',
+                                                                    textAlign: 'center',
+                                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.05)',
+                                                                    border: '1px solid var(--border)',
+                                                                    '--index': 1
+                                                                }}
+                                                            >
                                                                 <div style={{
-                                                                    fontSize: '1.75rem',
-                                                                    fontWeight: '700',
-                                                                    color: '#22c55e'
+                                                                    fontSize: '2rem',
+                                                                    fontWeight: '800',
+                                                                    color: '#22c55e',
+                                                                    letterSpacing: '-0.02em',
+                                                                    textShadow: '0 0 20px rgba(34, 197, 94, 0.3)'
                                                                 }}>
                                                                     {calculateCompletionRate(selectedHabitForStats.id)}%
                                                                 </div>
                                                                 <div style={{
                                                                     fontSize: '0.7rem',
                                                                     color: 'var(--text-muted)',
-                                                                    marginTop: '4px'
+                                                                    marginTop: '6px',
+                                                                    fontWeight: '600',
+                                                                    letterSpacing: '0.02em',
+                                                                    textTransform: 'uppercase'
                                                                 }}>
                                                                     Success Rate
                                                                 </div>
                                                             </div>
                                                             
-                                                            <div style={{
-                                                                backgroundColor: 'var(--bg-card)',
-                                                                borderRadius: '12px',
-                                                                padding: '16px',
-                                                                textAlign: 'center'
-                                                            }}>
+                                                            <div 
+                                                                className="apple-stat-card"
+                                                                style={{
+                                                                    backgroundColor: 'var(--bg-card)',
+                                                                    borderRadius: '16px',
+                                                                    padding: '20px',
+                                                                    textAlign: 'center',
+                                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.05)',
+                                                                    border: '1px solid var(--border)',
+                                                                    '--index': 2
+                                                                }}
+                                                            >
                                                                 <div style={{
-                                                                    fontSize: '1.75rem',
-                                                                    fontWeight: '700',
-                                                                    color: 'var(--text-main)'
+                                                                    fontSize: '2rem',
+                                                                    fontWeight: '800',
+                                                                    color: 'var(--text-main)',
+                                                                    letterSpacing: '-0.02em'
                                                                 }}>
                                                                     {completedCount}
                                                                 </div>
                                                                 <div style={{
                                                                     fontSize: '0.7rem',
                                                                     color: 'var(--text-muted)',
-                                                                    marginTop: '4px'
+                                                                    marginTop: '6px',
+                                                                    fontWeight: '600',
+                                                                    letterSpacing: '0.02em',
+                                                                    textTransform: 'uppercase'
                                                                 }}>
                                                                     Days Completed
                                                                 </div>
                                                             </div>
                                                             
-                                                            <div style={{
-                                                                backgroundColor: 'var(--bg-card)',
-                                                                borderRadius: '12px',
-                                                                padding: '16px',
-                                                                textAlign: 'center'
-                                                            }}>
+                                                            <div 
+                                                                className="apple-stat-card"
+                                                                style={{
+                                                                    backgroundColor: 'var(--bg-card)',
+                                                                    borderRadius: '16px',
+                                                                    padding: '20px',
+                                                                    textAlign: 'center',
+                                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.05)',
+                                                                    border: '1px solid var(--border)',
+                                                                    '--index': 3
+                                                                }}
+                                                            >
                                                                 <div style={{
-                                                                    fontSize: '1.75rem',
-                                                                    fontWeight: '700',
-                                                                    color: 'var(--text-muted)'
+                                                                    fontSize: '2rem',
+                                                                    fontWeight: '800',
+                                                                    color: 'var(--text-muted)',
+                                                                    letterSpacing: '-0.02em'
                                                                 }}>
                                                                     {completions.filter(c => c.habitId === selectedHabitForStats.id).length}
                                                                 </div>
                                                                 <div style={{
                                                                     fontSize: '0.7rem',
                                                                     color: 'var(--text-muted)',
-                                                                    marginTop: '4px'
+                                                                    marginTop: '6px',
+                                                                    fontWeight: '600',
+                                                                    letterSpacing: '0.02em',
+                                                                    textTransform: 'uppercase'
                                                                 }}>
                                                                     Total Completions
                                                                 </div>
@@ -803,57 +1078,87 @@ function HabitTracker({ isOpen, onClose }) {
                                                     </div>
                                                 </div>
 
-                                                {/* Line Chart */}
-                                                <div style={{
-                                                    backgroundColor: 'var(--bg-input)',
-                                                    borderRadius: '16px',
-                                                    padding: '20px'
-                                                }}>
+                                                {/* Line Chart - Apple Style */}
+                                                <div 
+                                                    className="apple-card"
+                                                    style={{
+                                                        backgroundColor: 'var(--bg-input)',
+                                                        borderRadius: '20px',
+                                                        padding: '24px',
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                                                        border: '1px solid var(--border)'
+                                                    }}
+                                                >
                                                     <h4 style={{
                                                         fontSize: '0.9rem',
                                                         fontWeight: '600',
-                                                        marginBottom: '16px'
+                                                        marginBottom: '20px',
+                                                        color: 'var(--text-main)',
+                                                        letterSpacing: '-0.01em'
                                                     }}>
                                                         30-Day Trend
                                                     </h4>
-                                                    <div style={{ height: '200px' }}>
+                                                    <div style={{ height: '220px' }}>
                                                         <ResponsiveContainer width="100%" height="100%">
-                                                            <LineChart data={completionData}>
-                                                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                                            <AreaChart data={completionData}>
+                                                                <defs>
+                                                                    <linearGradient id={`gradient-${selectedHabitForStats.id}`} x1="0" y1="0" x2="0" y2="1">
+                                                                        <stop offset="5%" stopColor={selectedHabitForStats.color} stopOpacity={0.4}/>
+                                                                        <stop offset="95%" stopColor={selectedHabitForStats.color} stopOpacity={0.05}/>
+                                                                    </linearGradient>
+                                                                </defs>
+                                                                <CartesianGrid 
+                                                                    strokeDasharray="4 4" 
+                                                                    stroke="var(--border)" 
+                                                                    vertical={false}
+                                                                />
                                                                 <XAxis 
                                                                     dataKey="date" 
                                                                     stroke="var(--text-muted)"
-                                                                    fontSize={10}
+                                                                    fontSize={11}
                                                                     tickLine={false}
                                                                     axisLine={false}
                                                                     interval={4}
+                                                                    tick={{ fill: 'var(--text-muted)', fontWeight: 500 }}
+                                                                    dy={10}
                                                                 />
                                                                 <YAxis 
                                                                     stroke="var(--text-muted)"
-                                                                    fontSize={10}
+                                                                    fontSize={11}
                                                                     tickLine={false}
                                                                     axisLine={false}
                                                                     domain={[0, 1]}
                                                                     ticks={[0, 1]}
                                                                     tickFormatter={(value) => value === 1 ? 'Done' : 'Miss'}
+                                                                    tick={{ fill: 'var(--text-muted)', fontWeight: 500 }}
                                                                 />
                                                                 <Tooltip
-                                                                    contentStyle={{
-                                                                        backgroundColor: 'var(--bg-card)',
-                                                                        border: '1px solid var(--border)',
-                                                                        borderRadius: '8px',
-                                                                        fontSize: '0.8rem'
+                                                                    content={<CustomLineTooltip />}
+                                                                    wrapperStyle={{ outline: 'none' }}
+                                                                    cursor={{ 
+                                                                        stroke: 'var(--text-muted)', 
+                                                                        strokeWidth: 1, 
+                                                                        strokeDasharray: '4 4',
+                                                                        opacity: 0.5
                                                                     }}
                                                                 />
-                                                                <Line
-                                                                    type="stepAfter"
+                                                                <Area
+                                                                    type="monotone"
                                                                     dataKey="completed"
                                                                     stroke={selectedHabitForStats.color}
-                                                                    strokeWidth={2}
-                                                                    dot={{ fill: selectedHabitForStats.color, r: 3 }}
-                                                                    activeDot={{ r: 5 }}
+                                                                    strokeWidth={3}
+                                                                    fill={`url(#gradient-${selectedHabitForStats.id})`}
+                                                                    animationDuration={1500}
+                                                                    animationEasing="ease-in-out"
+                                                                    dot={false}
+                                                                    activeDot={{ 
+                                                                        r: 6, 
+                                                                        fill: selectedHabitForStats.color,
+                                                                        stroke: 'var(--bg-card)',
+                                                                        strokeWidth: 3
+                                                                    }}
                                                                 />
-                                                            </LineChart>
+                                                            </AreaChart>
                                                         </ResponsiveContainer>
                                                     </div>
                                                 </div>
@@ -1180,6 +1485,7 @@ function HabitTracker({ isOpen, onClose }) {
                 </div>
             )}
         </div>
+        </>
     );
 }
 
