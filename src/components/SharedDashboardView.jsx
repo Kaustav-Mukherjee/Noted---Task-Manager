@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, AlertCircle, Users, CheckCircle2, Calendar, BookOpen, Target, Flame, Zap, Play, Pause, RotateCcw, Youtube, Music } from 'lucide-react';
+import { ArrowLeft, Lock, AlertCircle, Users, CheckCircle2, Calendar, BookOpen, Target, Flame, Zap, Headphones, Music } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './AuthModal';
 import * as firestoreService from '../services/firestoreService';
@@ -14,215 +14,174 @@ const parseSafeDate = (dateVal) => {
     return isNaN(d.getTime()) ? null : d;
 };
 
-// Display Owner's Focus Timer for Shared View (Read-only)
-function SharedFocusTimerDisplay({ timerState }) {
-    const [displayTime, setDisplayTime] = useState(25 * 60);
-    const [mode, setMode] = useState('FOCUS');
-    const [isActive, setIsActive] = useState(false);
-    const [customDuration, setCustomDuration] = useState(25);
-    const lastUpdateRef = useRef(Date.now());
-
-    // Calculate time based on owner's timestamp - recalculate every 100ms for accuracy
-    useEffect(() => {
-        let interval = null;
-        
-        if (isActive) {
-            interval = setInterval(() => {
-                // Always recalculate from the original timestamp to avoid drift
-                if (timerState && timerState.startTime && timerState.timeLeft) {
-                    const elapsedSinceStart = Math.floor((Date.now() - timerState.startTime) / 1000);
-                    const newTimeLeft = Math.max(0, timerState.timeLeft - elapsedSinceStart);
-                    setDisplayTime(newTimeLeft);
-                }
-            }, 100); // Update 10 times per second for smooth display
-        }
-        
-        return () => clearInterval(interval);
-    }, [isActive, timerState]);
-
-    // Sync with owner's timer state when it changes
-    useEffect(() => {
-        if (timerState) {
-            console.log('Shared Timer: Received state:', timerState);
-            
-            // Handle different mode formats (focus, short, long vs FOCUS, SHORT_BREAK, LONG_BREAK)
-            let normalizedMode = timerState.mode || 'FOCUS';
-            if (normalizedMode.toLowerCase() === 'focus') normalizedMode = 'FOCUS';
-            if (normalizedMode.toLowerCase() === 'short') normalizedMode = 'SHORT_BREAK';
-            if (normalizedMode.toLowerCase() === 'long') normalizedMode = 'LONG_BREAK';
-            setMode(normalizedMode);
-            
-            setIsActive(timerState.isActive || false);
-            setCustomDuration(timerState.customDuration || 25);
-            
-            // Calculate current time left based on saved state
-            let baseTimeLeft = timerState.timeLeft || 25 * 60;
-            if (timerState.isActive && timerState.startTime && timerState.timeLeft) {
-                const elapsedSinceStart = Math.floor((Date.now() - timerState.startTime) / 1000);
-                baseTimeLeft = Math.max(0, timerState.timeLeft - elapsedSinceStart);
-            }
-            setDisplayTime(baseTimeLeft);
-            lastUpdateRef.current = Date.now();
-        }
-    }, [timerState]);
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    // Calculate total time based on mode
-    const getTotalTime = () => {
-        if (mode === 'CUSTOM') return customDuration * 60;
-        if (mode === 'FOCUS') return 25 * 60;
-        if (mode === 'SHORT_BREAK') return 5 * 60;
-        if (mode === 'LONG_BREAK') return 15 * 60;
-        return 25 * 60;
-    };
-
-    const totalTime = getTotalTime();
-    const progress = totalTime > 0 ? ((totalTime - displayTime) / totalTime) * 100 : 0;
+// Simple Focus Mode Indicator
+function FocusModeIndicator({ timerState }) {
+    const isActive = timerState?.isActive || false;
+    const mode = timerState?.mode || 'FOCUS';
     
     const getModeLabel = () => {
-        if (mode === 'FOCUS') return 'Focus';
-        if (mode === 'SHORT_BREAK') return 'Short Break';
-        if (mode === 'LONG_BREAK') return 'Long Break';
-        if (mode === 'CUSTOM') return 'Custom';
-        return 'Focus';
+        if (mode === 'FOCUS' || mode === 'focus') return 'Focus Session';
+        if (mode === 'SHORT_BREAK' || mode === 'short') return 'Short Break';
+        if (mode === 'LONG_BREAK' || mode === 'long') return 'Long Break';
+        return 'Focus Session';
     };
     
-    const getModeColor = () => {
-        if (mode === 'FOCUS' || mode === 'CUSTOM') return '#8b5cf6';
-        return '#22c55e';
-    };
-
+    if (!isActive) {
+        return (
+            <div style={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                padding: '20px'
+            }}>
+                <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--bg-hover)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <Zap size={24} color="var(--text-muted)" />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-muted)' }}>
+                        No Active Session
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Owner is not in focus mode
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    
     return (
         <div style={{
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '24px',
-            gap: '20px'
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            padding: '20px'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Zap size={16} color={getModeColor()} />
-                    <h3 style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                        Owner's Focus Timer
-                    </h3>
-                </div>
-                {isActive && (
-                    <div style={{
-                        padding: '4px 8px',
-                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                        borderRadius: '4px',
-                        fontSize: '0.7rem',
-                        color: '#22c55e',
-                        fontWeight: '600'
-                    }}>
-                        Running
-                    </div>
-                )}
+            <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'pulse 2s ease-in-out infinite'
+            }}>
+                <Zap size={32} color="#8b5cf6" />
             </div>
-
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
-                {/* Circular Progress */}
-                <div style={{ position: 'relative', width: '180px', height: '180px' }}>
-                    <svg width="180" height="180" viewBox="0 0 180 180">
-                        <circle cx="90" cy="90" r="80" fill="none" stroke="var(--border)" strokeWidth="8" />
-                        <circle 
-                            cx="90" 
-                            cy="90" 
-                            r="80" 
-                            fill="none" 
-                            stroke={getModeColor()}
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            strokeDasharray={`${2 * Math.PI * 80}`}
-                            strokeDashoffset={`${2 * Math.PI * 80 * (1 - progress / 100)}`}
-                            transform="rotate(-90 90 90)"
-                            style={{ transition: 'stroke-dashoffset 1s linear' }}
-                        />
-                    </svg>
-                    <div style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        textAlign: 'center'
-                    }}>
-                        <div style={{ fontSize: '2.5rem', fontWeight: '300', color: 'var(--text-main)' }}>
-                            {formatTime(displayTime)}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                            {getModeLabel()}
-                        </div>
-                    </div>
+            <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: '#8b5cf6' }}>
+                    Owner is in {getModeLabel()}
                 </div>
-
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                    View-only: This shows the dashboard owner's current timer
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Currently focusing on their tasks
                 </div>
             </div>
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.05); opacity: 0.8; }
+                }
+            `}</style>
         </div>
     );
 }
 
-// Display Owner's Now Playing for Shared View (Read-only)
-function SharedNowPlaying({ nowPlaying }) {
-    const videoId = nowPlaying?.videoId || 'jfKfPfyJRdk';
-    const videoTitle = nowPlaying?.title || '';
-
+// Now Playing Indicator
+function NowPlayingIndicator({ nowPlaying }) {
+    const hasMusic = nowPlaying?.videoId && nowPlaying?.title;
+    
+    if (!hasMusic) {
+        return (
+            <div style={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                padding: '20px'
+            }}>
+                <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--bg-hover)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <Music size={24} color="var(--text-muted)" />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-muted)' }}>
+                        No Music Playing
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Owner is not listening to anything
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    
     return (
         <div style={{
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '16px',
-            gap: '12px'
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            padding: '20px'
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Youtube size={20} color="#ff0000" />
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Owner's Now Playing</h3>
-                </div>
-            </div>
-
-            {videoTitle && (
-                <div style={{ 
-                    fontSize: '0.8rem', 
-                    color: 'var(--text-muted)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                }}>
-                    {videoTitle}
-                </div>
-            )}
-
             <div style={{
-                flex: 1,
-                minHeight: '200px',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                backgroundColor: '#000'
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'pulse 2s ease-in-out infinite'
             }}>
-                <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&rel=0&modestbranding=1`}
-                    title="YouTube"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={{ border: 'none' }}
-                />
+                <Headphones size={28} color="#ef4444" />
             </div>
-            
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                This shows what the dashboard owner is currently listening to
+            <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#ef4444' }}>
+                    Owner is listening to music
+                </div>
+                <div style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'var(--text-muted)', 
+                    marginTop: '4px',
+                    maxWidth: '200px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                }}>
+                    {nowPlaying.title}
+                </div>
             </div>
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.05); opacity: 0.8; }
+                }
+            `}</style>
         </div>
     );
 }
@@ -368,15 +327,6 @@ export default function SharedDashboardView() {
         };
     }, [tasks, studySessions]);
 
-    const handleTimerComplete = (hours) => {
-        if (canEditShared && sharedDashboardOwnerId) {
-            firestoreService.addSharedStudySession(sharedDashboardOwnerId, {
-                date: new Date().toISOString(),
-                hours: parseFloat(hours)
-            });
-        }
-    };
-
     if (loading) {
         return (
             <div style={{
@@ -450,7 +400,7 @@ export default function SharedDashboardView() {
     }
 
     return (
-        <div style={{ 
+        <div className="shared-dashboard" style={{ 
             minHeight: '100vh', 
             background: 'var(--bg-app)',
             display: 'flex',
@@ -498,11 +448,7 @@ export default function SharedDashboardView() {
                         }}>
                             <Users size={12} />
                             <span>Shared Dashboard</span>
-                            {canEditShared ? (
-                                <span style={{ color: '#22c55e' }}>• Can Edit</span>
-                            ) : (
-                                <span style={{ color: '#3b82f6' }}>• View Only</span>
-                            )}
+                            <span style={{ color: '#3b82f6' }}>• View Only</span>
                         </div>
                     </div>
                 </div>
@@ -527,106 +473,158 @@ export default function SharedDashboardView() {
             </header>
 
             {/* View-only Banner */}
-            {!canEditShared && (
-                <div style={{
-                    padding: '12px 24px',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    color: '#3b82f6',
-                    fontSize: '0.9rem',
-                    flexShrink: 0
-                }}>
-                    <AlertCircle size={18} />
-                    <span>You have view-only access to this dashboard. Contact the owner for edit permissions.</span>
-                </div>
-            )}
+            <div style={{
+                padding: '12px 24px',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                color: '#3b82f6',
+                fontSize: '0.9rem',
+                flexShrink: 0
+            }}>
+                <AlertCircle size={18} />
+                <span>You have view-only access to this dashboard.</span>
+            </div>
 
-            {/* Main Content */}
-            <main style={{
+            {/* Main Content - Bento Grid */}
+            <main className="bento-grid-container" style={{
                 flex: 1,
                 padding: '20px',
-                overflow: 'auto',
-                maxHeight: 'calc(100vh - 140px)'
+                overflow: 'auto'
             }}>
-                <div style={{
-                    maxWidth: '1400px',
+                <div className="bento-grid" style={{
+                    maxWidth: '1200px',
                     margin: '0 auto',
                     display: 'grid',
                     gap: '16px',
-                    gridTemplateColumns: 'repeat(12, 1fr)',
-                    gridAutoRows: 'minmax(180px, auto)'
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gridAutoRows: 'minmax(140px, auto)'
                 }}>
-                    {/* Streak Card */}
-                    <div style={{
-                        gridColumn: 'span 3',
+                    {/* Streak Card - Small */}
+                    <div className="bento-card streak-card" style={{
+                        gridColumn: 'span 1',
+                        gridRow: 'span 1',
                         backgroundColor: 'var(--bg-card)',
-                        borderRadius: '20px',
+                        borderRadius: '16px',
                         border: '1px solid var(--border)',
-                        padding: '20px',
+                        padding: '16px',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
-                        minHeight: '160px'
+                        gap: '8px'
                     }}>
                         <div style={{
-                            width: '60px',
-                            height: '60px',
-                            borderRadius: '16px',
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}>
-                            <Flame size={32} color="#ef4444" />
+                            <Flame size={24} color="#ef4444" />
                         </div>
-                        <div style={{ fontSize: '3rem', fontWeight: '800', color: '#ef4444' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#ef4444' }}>
                             {streak}
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Day Streak
                         </div>
                     </div>
 
-                    {/* Tasks Overview */}
-                    <div style={{
-                        gridColumn: 'span 5',
+                    {/* Completion Rate - Small */}
+                    <div className="bento-card completion-card" style={{
+                        gridColumn: 'span 1',
+                        gridRow: 'span 1',
+                        backgroundColor: 'var(--bg-card)',
+                        borderRadius: '16px',
+                        border: '1px solid var(--border)',
+                        padding: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                    }}>
+                        <div style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <CheckCircle2 size={24} color="#22c55e" />
+                        </div>
+                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#22c55e' }}>
+                            {stats.completionRate}%
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Completion
+                        </div>
+                    </div>
+
+                    {/* Focus Mode Indicator - Small */}
+                    <div className="bento-card focus-card" style={{
+                        gridColumn: 'span 1',
+                        gridRow: 'span 1',
+                        backgroundColor: 'var(--bg-card)',
+                        borderRadius: '16px',
+                        border: '1px solid var(--border)',
+                        overflow: 'hidden'
+                    }}>
+                        <FocusModeIndicator timerState={ownerTimerState} />
+                    </div>
+
+                    {/* Now Playing Indicator - Small */}
+                    <div className="bento-card music-card" style={{
+                        gridColumn: 'span 1',
+                        gridRow: 'span 1',
+                        backgroundColor: 'var(--bg-card)',
+                        borderRadius: '16px',
+                        border: '1px solid var(--border)',
+                        overflow: 'hidden'
+                    }}>
+                        <NowPlayingIndicator nowPlaying={ownerNowPlaying} />
+                    </div>
+
+                    {/* Tasks Overview - Large */}
+                    <div className="bento-card tasks-card" style={{
+                        gridColumn: 'span 2',
                         gridRow: 'span 2',
                         backgroundColor: 'var(--bg-card)',
-                        borderRadius: '20px',
+                        borderRadius: '16px',
                         border: '1px solid var(--border)',
                         padding: '20px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
-                        minHeight: '280px',
-                        maxHeight: '400px'
+                        gap: '12px'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '12px',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
                                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                <CheckCircle2 size={20} color="#22c55e" />
+                                <CheckCircle2 size={18} color="#22c55e" />
                             </div>
                             <div>
-                                <h3 style={{ fontSize: '1rem', fontWeight: '600' }}>Tasks Overview</h3>
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Tasks Overview</h3>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                                     {stats.completedTasks} of {stats.totalTasks} completed
                                 </p>
                             </div>
                         </div>
 
-                        <div style={{ flex: 1, minHeight: '120px' }}>
+                        <div style={{ flex: 1, minHeight: '150px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={stats.taskGraphData} barGap={4}>
                                     <Tooltip
@@ -650,53 +648,53 @@ export default function SharedDashboardView() {
                             </ResponsiveContainer>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '24px' }}>
+                        <div style={{ display: 'flex', gap: '16px' }}>
                             <div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#22c55e' }}>
-                                    {stats.completionRate}%
-                                </div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Completion</div>
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#22c55e' }}>
                                     {stats.todayCompleted}/{stats.todayTasks}
                                 </div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Today</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Today</div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Study Hours */}
-                    <div style={{
-                        gridColumn: 'span 4',
+                    {/* Study Hours - Medium */}
+                    <div className="bento-card study-card" style={{
+                        gridColumn: 'span 2',
+                        gridRow: 'span 1',
                         backgroundColor: 'var(--bg-card)',
-                        borderRadius: '20px',
+                        borderRadius: '16px',
                         border: '1px solid var(--border)',
-                        padding: '20px',
+                        padding: '16px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
-                        minHeight: '200px'
+                        gap: '10px'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '12px',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
                                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                <BookOpen size={20} color="#3b82f6" />
+                                <BookOpen size={18} color="#3b82f6" />
                             </div>
                             <div>
-                                <h3 style={{ fontSize: '1rem', fontWeight: '600' }}>Study Hours</h3>
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Last 7 days</p>
+                                <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Study Hours</h3>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Last 7 days</p>
+                            </div>
+                            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6' }}>
+                                    {stats.totalStudyHours}h
+                                </div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Total</div>
                             </div>
                         </div>
 
-                        <div style={{ flex: 1, minHeight: '100px' }}>
+                        <div style={{ flex: 1, minHeight: '80px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={stats.studyGraphData}>
                                     <Tooltip
@@ -712,80 +710,44 @@ export default function SharedDashboardView() {
                                         dataKey="name"
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                                        tick={{ fill: 'var(--text-muted)', fontSize: 9 }}
                                     />
                                     <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
-
-                        <div>
-                            <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#3b82f6' }}>
-                                {stats.totalStudyHours}h
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Total Hours</div>
-                        </div>
                     </div>
 
-                    {/* Focus Timer - Shows Owner's Timer */}
-                    <div style={{
-                        gridColumn: 'span 4',
-                        gridRow: 'span 2',
+                    {/* Daily Goals - Medium */}
+                    <div className="bento-card goals-card" style={{
+                        gridColumn: 'span 2',
+                        gridRow: 'span 1',
                         backgroundColor: 'var(--bg-card)',
-                        borderRadius: '20px',
+                        borderRadius: '16px',
                         border: '1px solid var(--border)',
-                        overflow: 'hidden',
-                        minHeight: '280px',
-                        maxHeight: '400px'
-                    }}>
-                        <SharedFocusTimerDisplay timerState={ownerTimerState} />
-                    </div>
-
-                    {/* Now Playing - Shows Owner's Music */}
-                    <div style={{
-                        gridColumn: 'span 5',
-                        gridRow: 'span 2',
-                        backgroundColor: 'var(--bg-card)',
-                        borderRadius: '20px',
-                        border: '1px solid var(--border)',
-                        overflow: 'hidden',
-                        minHeight: '280px',
-                        maxHeight: '400px'
-                    }}>
-                        <SharedNowPlaying nowPlaying={ownerNowPlaying} />
-                    </div>
-
-                    {/* Daily Goals */}
-                    <div style={{
-                        gridColumn: 'span 3',
-                        backgroundColor: 'var(--bg-card)',
-                        borderRadius: '20px',
-                        border: '1px solid var(--border)',
-                        padding: '20px',
+                        padding: '16px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
-                        minHeight: '200px'
+                        gap: '10px'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '12px',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
                                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                <Target size={20} color="#22c55e" />
+                                <Target size={18} color="#22c55e" />
                             </div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: '600' }}>Daily Goals</h3>
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Daily Goals</h3>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'center' }}>
                             {goals && Object.keys(goals).length > 0 ? (
                                 (() => {
-                                    // Calculate today's completed hours
                                     const today = new Date();
                                     const todayHours = studySessions
                                         .filter(s => {
@@ -794,24 +756,20 @@ export default function SharedDashboardView() {
                                         })
                                         .reduce((sum, s) => sum + (parseFloat(s.hours) || 0), 0);
                                     
-                                    return Object.entries(goals).slice(0, 3).map(([key, goal]) => {
+                                    return Object.entries(goals).slice(0, 2).map(([key, goal]) => {
                                         const completed = Math.min(todayHours, goal.hours);
                                         const percentage = goal.hours > 0 ? (completed / goal.hours) * 100 : 0;
                                         
                                         return (
-                                            <div key={key} style={{
-                                                padding: '12px',
-                                                backgroundColor: 'var(--bg-hover)',
-                                                borderRadius: '10px'
-                                            }}>
+                                            <div key={key}>
                                                 <div style={{ 
                                                     display: 'flex', 
                                                     justifyContent: 'space-between',
-                                                    fontSize: '0.8rem',
-                                                    marginBottom: '6px'
+                                                    fontSize: '0.75rem',
+                                                    marginBottom: '4px'
                                                 }}>
-                                                    <span style={{ color: 'var(--text-muted)' }}>Daily Goal</span>
-                                                    <span style={{ fontWeight: '600' }}>
+                                                    <span style={{ color: 'var(--text-muted)' }}>Goal</span>
+                                                    <span style={{ fontWeight: '600', fontSize: '0.8rem' }}>
                                                         {completed.toFixed(1)}h / {goal.hours}h
                                                     </span>
                                                 </div>
@@ -829,28 +787,15 @@ export default function SharedDashboardView() {
                                                         transition: 'width 0.3s ease'
                                                     }} />
                                                 </div>
-                                                {percentage >= 100 && (
-                                                    <div style={{ 
-                                                        fontSize: '0.7rem', 
-                                                        color: '#22c55e', 
-                                                        marginTop: '4px',
-                                                        fontWeight: '600'
-                                                    }}>
-                                                        Goal completed! 🎉
-                                                    </div>
-                                                )}
                                             </div>
                                         );
                                     });
                                 })()
                             ) : (
                                 <div style={{ 
-                                    flex: 1, 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center',
+                                    textAlign: 'center',
                                     color: 'var(--text-muted)',
-                                    fontSize: '0.85rem'
+                                    fontSize: '0.8rem'
                                 }}>
                                     No goals set yet
                                 </div>
@@ -858,21 +803,21 @@ export default function SharedDashboardView() {
                         </div>
                     </div>
 
-                    {/* Recent Tasks */}
-                    <div style={{
-                        gridColumn: 'span 12',
+                    {/* Recent Tasks - Wide */}
+                    <div className="bento-card recent-tasks-card" style={{
+                        gridColumn: 'span 4',
+                        gridRow: 'span 1',
                         backgroundColor: 'var(--bg-card)',
-                        borderRadius: '20px',
+                        borderRadius: '16px',
                         border: '1px solid var(--border)',
-                        padding: '20px',
+                        padding: '16px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
-                        maxHeight: '280px'
+                        gap: '10px'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Calendar size={20} color="var(--text-muted)" />
-                            <h3 style={{ fontSize: '1rem', fontWeight: '600' }}>Recent Tasks</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Calendar size={18} color="var(--text-muted)" />
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Recent Tasks</h3>
                         </div>
 
                         <div style={{ 
@@ -880,24 +825,25 @@ export default function SharedDashboardView() {
                             overflow: 'auto',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '8px'
+                            gap: '6px',
+                            maxHeight: '150px'
                         }}>
-                            {tasks.slice(0, 8).map((task) => (
+                            {tasks.slice(0, 6).map((task) => (
                                 <div
                                     key={task.id}
                                     style={{
-                                        padding: '12px 16px',
+                                        padding: '8px 12px',
                                         backgroundColor: 'var(--bg-hover)',
-                                        borderRadius: '12px',
+                                        borderRadius: '8px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '12px',
+                                        gap: '10px',
                                         opacity: task.completed ? 0.6 : 1
                                     }}
                                 >
                                     <div style={{
-                                        width: '20px',
-                                        height: '20px',
+                                        width: '16px',
+                                        height: '16px',
                                         borderRadius: '50%',
                                         border: `2px solid ${task.completed ? '#22c55e' : 'var(--border)'}`,
                                         backgroundColor: task.completed ? '#22c55e' : 'transparent',
@@ -906,25 +852,25 @@ export default function SharedDashboardView() {
                                         justifyContent: 'center',
                                         flexShrink: 0
                                     }}>
-                                        {task.completed && <CheckCircle2 size={12} color="white" />}
+                                        {task.completed && <CheckCircle2 size={10} color="white" />}
                                     </div>
                                     <span style={{
                                         flex: 1,
                                         textDecoration: task.completed ? 'line-through' : 'none',
                                         color: task.completed ? 'var(--text-muted)' : 'var(--text-main)',
-                                        fontSize: '0.9rem'
+                                        fontSize: '0.85rem'
                                     }}>
                                         {task.text}
                                     </span>
                                     {task.date && (
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                                             {format(parseSafeDate(task.date), 'MMM d')}
                                         </span>
                                     )}
                                 </div>
                             ))}
                             {tasks.length === 0 && (
-                                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                     No tasks yet
                                 </div>
                             )}
@@ -937,25 +883,45 @@ export default function SharedDashboardView() {
 
             {/* Responsive Styles */}
             <style>{`
-                @media (max-width: 1200px) {
-                    main > div {
-                        grid-template-columns: repeat(6, 1fr) !important;
+                @media (max-width: 1024px) {
+                    .bento-grid {
+                        grid-template-columns: repeat(2, 1fr) !important;
                     }
-                    main > div > div {
-                        grid-column: span 3 !important;
+                    .bento-card {
+                        grid-column: span 1 !important;
                     }
-                    main > div > div:last-child {
-                        grid-column: span 6 !important;
+                    .tasks-card {
+                        grid-column: span 2 !important;
+                        grid-row: span 2 !important;
+                    }
+                    .study-card, .goals-card {
+                        grid-column: span 1 !important;
+                    }
+                    .recent-tasks-card {
+                        grid-column: span 2 !important;
                     }
                 }
                 
-                @media (max-width: 768px) {
-                    main > div {
+                @media (max-width: 640px) {
+                    .bento-grid {
                         grid-template-columns: 1fr !important;
+                        gap: 12px !important;
                     }
-                    main > div > div {
+                    .bento-card {
                         grid-column: span 1 !important;
                         grid-row: span 1 !important;
+                    }
+                    .tasks-card {
+                        grid-row: span 2 !important;
+                    }
+                    .shared-dashboard header {
+                        padding: 12px 16px !important;
+                    }
+                    .shared-dashboard header h1 {
+                        font-size: 1rem !important;
+                    }
+                    .bento-grid-container {
+                        padding: 12px !important;
                     }
                 }
             `}</style>
