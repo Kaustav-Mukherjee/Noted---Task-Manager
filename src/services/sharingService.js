@@ -16,10 +16,17 @@ import {
 import { db } from '../firebase';
 import emailjs from '@emailjs/browser';
 
-// EmailJS Configuration
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+// EmailJS Configuration - using hardcoded values since env vars might not load properly
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_f4komv3';
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_gepgwjj';
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '_qHcO5cOQB2J1EOKI';
+
+// Debug logging
+console.log('EmailJS Config:', {
+    serviceId: EMAILJS_SERVICE_ID ? 'Set' : 'Not set',
+    templateId: EMAILJS_TEMPLATE_ID ? 'Set' : 'Not set',
+    publicKey: EMAILJS_PUBLIC_KEY ? 'Set' : 'Not set'
+});
 
 // Shared Dashboards Collection
 export const sharedDashboardsCollection = () => collection(db, 'sharedDashboards');
@@ -174,11 +181,24 @@ export const copyShareLink = async (shareLink) => {
     }
 };
 
+// Initialize EmailJS
+let emailjsInitialized = false;
+const initializeEmailJS = () => {
+    if (!emailjsInitialized && EMAILJS_PUBLIC_KEY) {
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+        emailjsInitialized = true;
+        console.log('EmailJS initialized successfully');
+    }
+};
+
 // Send invitation email using EmailJS
 export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTitle, ownerEmail, permissions) => {
+    // Initialize EmailJS first
+    initializeEmailJS();
+    
     // Check if EmailJS is configured
     if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-        console.warn('EmailJS not configured. Skipping email send.');
+        console.warn('EmailJS not configured. Service ID:', EMAILJS_SERVICE_ID, 'Template ID:', EMAILJS_TEMPLATE_ID, 'Public Key exists:', !!EMAILJS_PUBLIC_KEY);
         return { success: false, error: 'Email service not configured' };
     }
 
@@ -187,24 +207,32 @@ export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTi
             to_email: recipientEmail,
             to_name: recipientEmail.split('@')[0],
             from_name: ownerEmail || 'Noted App',
+            reply_to: ownerEmail || 'noreply@noted.app',
             dashboard_title: dashboardTitle || 'Shared Dashboard',
             share_link: shareLink,
             permissions: permissions === 'edit' ? 'Can Edit' : 'View Only',
-            message: `You've been invited to collaborate on a dashboard. Click the link above to access it.`
+            message: `You've been invited to collaborate on a dashboard. Click the link above to access it.`,
+            time: new Date().toLocaleString()
         };
+
+        console.log('Sending email to:', recipientEmail, 'with params:', templateParams);
 
         const response = await emailjs.send(
             EMAILJS_SERVICE_ID,
             EMAILJS_TEMPLATE_ID,
-            templateParams,
-            EMAILJS_PUBLIC_KEY
+            templateParams
         );
 
-        console.log('Email sent successfully:', response);
+        console.log('Email sent successfully to', recipientEmail, ':', response);
         return { success: true, response };
     } catch (error) {
-        console.error('Failed to send email:', error);
-        return { success: false, error: error.message };
+        console.error('Failed to send email to', recipientEmail, ':', error);
+        console.error('Error details:', {
+            message: error.message,
+            text: error.text,
+            status: error.status
+        });
+        return { success: false, error: error.message || error.text || 'Unknown error' };
     }
 };
 

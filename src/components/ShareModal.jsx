@@ -54,6 +54,7 @@ export default function ShareModal({ isOpen, onClose }) {
             // Send invitation emails if email addresses are provided
             if (emailList.length > 0) {
                 setEmailStatus('sending');
+                console.log('Starting to send emails to:', emailList);
                 const emailResults = await sendInvitationEmails(
                     emailList,
                     newDashboard.shareLink,
@@ -62,11 +63,19 @@ export default function ShareModal({ isOpen, onClose }) {
                     newDashboardPermissions
                 );
                 
+                console.log('Email sending results:', emailResults);
                 const successfulSends = emailResults.filter(r => r.success).length;
+                const failedSends = emailResults.filter(r => !r.success);
+                
+                if (failedSends.length > 0) {
+                    console.error('Failed emails:', failedSends);
+                }
+                
                 setEmailStatus({
                     sent: successfulSends,
                     total: emailList.length,
-                    results: emailResults
+                    results: emailResults,
+                    failed: failedSends
                 });
             }
             
@@ -604,23 +613,49 @@ export default function ShareModal({ isOpen, onClose }) {
 
                     {/* Email Status */}
                     {emailStatus && (
-                        <div style={{
-                            padding: '12px 16px',
-                            backgroundColor: emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                            border: `1px solid ${emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
-                            borderRadius: '10px',
-                            marginBottom: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '0.85rem',
-                            color: emailStatus.sent === emailStatus.total ? '#22c55e' : '#3b82f6'
-                        }}>
-                            <Mail size={16} />
-                            {emailStatus === 'sending' ? (
-                                <span>Sending emails...</span>
-                            ) : (
-                                <span>Emails sent: {emailStatus.sent}/{emailStatus.total}</span>
+                        <div>
+                            <div style={{
+                                padding: '12px 16px',
+                                backgroundColor: emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.1)' : emailStatus.failed?.length > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                                border: `1px solid ${emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.3)' : emailStatus.failed?.length > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
+                                borderRadius: '10px',
+                                marginBottom: emailStatus.failed?.length > 0 ? '10px' : '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: '0.85rem',
+                                color: emailStatus.sent === emailStatus.total ? '#22c55e' : emailStatus.failed?.length > 0 ? '#ef4444' : '#3b82f6'
+                            }}>
+                                <Mail size={16} />
+                                {emailStatus === 'sending' ? (
+                                    <span>Sending emails...</span>
+                                ) : emailStatus.failed?.length > 0 ? (
+                                    <span>Emails failed: {emailStatus.failed.length}/{emailStatus.total}</span>
+                                ) : (
+                                    <span>Emails sent: {emailStatus.sent}/{emailStatus.total}</span>
+                                )}
+                            </div>
+                            
+                            {/* Show failed email details */}
+                            {emailStatus.failed?.length > 0 && (
+                                <div style={{
+                                    padding: '10px 12px',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                                    borderRadius: '8px',
+                                    marginBottom: '20px',
+                                    fontSize: '0.75rem',
+                                    color: '#ef4444'
+                                }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '6px' }}>Failed to send to:</div>
+                                    {emailStatus.failed.map((fail, idx) => (
+                                        <div key={idx} style={{ marginBottom: '4px' }}>
+                                            • {fail.email} {fail.error && <span style={{ opacity: 0.7 }}>({fail.error})</span>}
+                                        </div>
+                                    ))}
+                                    <div style={{ marginTop: '8px', color: 'var(--text-muted)' }}>
+                                        Check console for details. Link is still created and can be shared manually.
+                                    </div>
+                                </div>
                             )}
                         </div>
                     )}
