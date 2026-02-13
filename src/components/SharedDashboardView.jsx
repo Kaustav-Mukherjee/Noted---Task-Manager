@@ -17,23 +17,32 @@ const parseSafeDate = (dateVal) => {
 // Display Owner's Focus Timer for Shared View (Read-only)
 function SharedFocusTimerDisplay({ timerState }) {
     const [displayTime, setDisplayTime] = useState(25 * 60);
-    const [mode, setMode] = useState('focus');
+    const [mode, setMode] = useState('FOCUS');
     const [isActive, setIsActive] = useState(false);
+    const [customDuration, setCustomDuration] = useState(25);
 
     // Sync with owner's timer state
     useEffect(() => {
         if (timerState) {
-            setMode(timerState.mode || 'focus');
+            console.log('Shared Timer: Received state:', timerState);
+            
+            // Handle different mode formats (focus, short, long vs FOCUS, SHORT_BREAK, LONG_BREAK)
+            let normalizedMode = timerState.mode || 'FOCUS';
+            if (normalizedMode.toLowerCase() === 'focus') normalizedMode = 'FOCUS';
+            if (normalizedMode.toLowerCase() === 'short') normalizedMode = 'SHORT_BREAK';
+            if (normalizedMode.toLowerCase() === 'long') normalizedMode = 'LONG_BREAK';
+            setMode(normalizedMode);
+            
             setIsActive(timerState.isActive || false);
+            setCustomDuration(timerState.customDuration || 25);
             
             // Calculate current time left based on saved state
+            let baseTimeLeft = timerState.timeLeft || 25 * 60;
             if (timerState.isActive && timerState.startTime && timerState.timeLeft) {
                 const elapsedSinceStart = Math.floor((Date.now() - timerState.startTime) / 1000);
-                const newTimeLeft = Math.max(0, timerState.timeLeft - elapsedSinceStart);
-                setDisplayTime(newTimeLeft);
-            } else {
-                setDisplayTime(timerState.timeLeft || 25 * 60);
+                baseTimeLeft = Math.max(0, timerState.timeLeft - elapsedSinceStart);
             }
+            setDisplayTime(baseTimeLeft);
         }
     }, [timerState]);
 
@@ -54,10 +63,30 @@ function SharedFocusTimerDisplay({ timerState }) {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const totalTime = mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60;
-    const progress = ((totalTime - displayTime) / totalTime) * 100;
-    const modeLabel = mode === 'focus' ? 'Focus' : mode === 'short' ? 'Short Break' : 'Long Break';
-    const modeColor = mode === 'focus' ? '#8b5cf6' : '#22c55e';
+    // Calculate total time based on mode
+    const getTotalTime = () => {
+        if (mode === 'CUSTOM') return customDuration * 60;
+        if (mode === 'FOCUS') return 25 * 60;
+        if (mode === 'SHORT_BREAK') return 5 * 60;
+        if (mode === 'LONG_BREAK') return 15 * 60;
+        return 25 * 60;
+    };
+
+    const totalTime = getTotalTime();
+    const progress = totalTime > 0 ? ((totalTime - displayTime) / totalTime) * 100 : 0;
+    
+    const getModeLabel = () => {
+        if (mode === 'FOCUS') return 'Focus';
+        if (mode === 'SHORT_BREAK') return 'Short Break';
+        if (mode === 'LONG_BREAK') return 'Long Break';
+        if (mode === 'CUSTOM') return 'Custom';
+        return 'Focus';
+    };
+    
+    const getModeColor = () => {
+        if (mode === 'FOCUS' || mode === 'CUSTOM') return '#8b5cf6';
+        return '#22c55e';
+    };
 
     return (
         <div style={{
@@ -69,7 +98,7 @@ function SharedFocusTimerDisplay({ timerState }) {
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Zap size={16} color={modeColor} />
+                    <Zap size={16} color={getModeColor()} />
                     <h3 style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                         Owner's Focus Timer
                     </h3>
@@ -98,7 +127,7 @@ function SharedFocusTimerDisplay({ timerState }) {
                             cy="90" 
                             r="80" 
                             fill="none" 
-                            stroke={modeColor}
+                            stroke={getModeColor()}
                             strokeWidth="8"
                             strokeLinecap="round"
                             strokeDasharray={`${2 * Math.PI * 80}`}
@@ -118,7 +147,7 @@ function SharedFocusTimerDisplay({ timerState }) {
                             {formatTime(displayTime)}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                            {modeLabel}
+                            {getModeLabel()}
                         </div>
                     </div>
                 </div>
@@ -738,36 +767,65 @@ export default function SharedDashboardView() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
                             {goals && Object.keys(goals).length > 0 ? (
-                                Object.entries(goals).slice(0, 3).map(([key, goal]) => (
-                                    <div key={key} style={{
-                                        padding: '12px',
-                                        backgroundColor: 'var(--bg-hover)',
-                                        borderRadius: '10px'
-                                    }}>
-                                        <div style={{ 
-                                            display: 'flex', 
-                                            justifyContent: 'space-between',
-                                            fontSize: '0.8rem',
-                                            marginBottom: '6px'
-                                        }}>
-                                            <span>Goal</span>
-                                            <span>{goal.hours}h</span>
-                                        </div>
-                                        <div style={{
-                                            height: '6px',
-                                            backgroundColor: 'var(--border)',
-                                            borderRadius: '3px',
-                                            overflow: 'hidden'
-                                        }}>
-                                            <div style={{
-                                                height: '100%',
-                                                width: `${Math.min((goal.completed || 0) / goal.hours * 100, 100)}%`,
-                                                backgroundColor: '#22c55e',
-                                                borderRadius: '3px'
-                                            }} />
-                                        </div>
-                                    </div>
-                                ))
+                                (() => {
+                                    // Calculate today's completed hours
+                                    const today = new Date();
+                                    const todayHours = studySessions
+                                        .filter(s => {
+                                            const sessionDate = parseSafeDate(s.date);
+                                            return sessionDate && isSameDay(sessionDate, today);
+                                        })
+                                        .reduce((sum, s) => sum + (parseFloat(s.hours) || 0), 0);
+                                    
+                                    return Object.entries(goals).slice(0, 3).map(([key, goal]) => {
+                                        const completed = Math.min(todayHours, goal.hours);
+                                        const percentage = goal.hours > 0 ? (completed / goal.hours) * 100 : 0;
+                                        
+                                        return (
+                                            <div key={key} style={{
+                                                padding: '12px',
+                                                backgroundColor: 'var(--bg-hover)',
+                                                borderRadius: '10px'
+                                            }}>
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between',
+                                                    fontSize: '0.8rem',
+                                                    marginBottom: '6px'
+                                                }}>
+                                                    <span style={{ color: 'var(--text-muted)' }}>Daily Goal</span>
+                                                    <span style={{ fontWeight: '600' }}>
+                                                        {completed.toFixed(1)}h / {goal.hours}h
+                                                    </span>
+                                                </div>
+                                                <div style={{
+                                                    height: '6px',
+                                                    backgroundColor: 'var(--border)',
+                                                    borderRadius: '3px',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    <div style={{
+                                                        height: '100%',
+                                                        width: `${Math.min(percentage, 100)}%`,
+                                                        backgroundColor: percentage >= 100 ? '#22c55e' : '#3b82f6',
+                                                        borderRadius: '3px',
+                                                        transition: 'width 0.3s ease'
+                                                    }} />
+                                                </div>
+                                                {percentage >= 100 && (
+                                                    <div style={{ 
+                                                        fontSize: '0.7rem', 
+                                                        color: '#22c55e', 
+                                                        marginTop: '4px',
+                                                        fontWeight: '600'
+                                                    }}>
+                                                        Goal completed! 🎉
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    });
+                                })()
                             ) : (
                                 <div style={{ 
                                     flex: 1, 

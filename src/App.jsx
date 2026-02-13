@@ -114,6 +114,13 @@ function App() {
         return currentStreak;
     }, [tasks]);
 
+    // Save streak to Firestore when it changes
+    useEffect(() => {
+        if (user && streak >= 0) {
+            firestoreService.saveUserStats(user.uid, { streak });
+        }
+    }, [streak, user]);
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
