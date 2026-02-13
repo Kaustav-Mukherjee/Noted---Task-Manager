@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, AlertCircle, Users, CheckCircle2, Calendar, BookOpen, Target, Flame, Zap, Headphones, Music } from 'lucide-react';
+import { ArrowLeft, Lock, AlertCircle, Users, CheckCircle2, Calendar, BookOpen, Target, Flame, Zap, Headphones, Music, ExternalLink } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './AuthModal';
 import * as firestoreService from '../services/firestoreService';
@@ -103,6 +103,7 @@ function FocusModeIndicator({ timerState }) {
 // Now Playing Indicator
 function NowPlayingIndicator({ nowPlaying }) {
     const hasMusic = nowPlaying?.videoId && nowPlaying?.title;
+    const youtubeUrl = hasMusic ? `https://www.youtube.com/watch?v=${nowPlaying.videoId}` : null;
     
     if (!hasMusic) {
         return (
@@ -146,11 +147,11 @@ function NowPlayingIndicator({ nowPlaying }) {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '12px',
-            padding: '20px'
+            padding: '16px'
         }}>
             <div style={{
-                width: '56px',
-                height: '56px',
+                width: '52px',
+                height: '52px',
                 borderRadius: '50%',
                 backgroundColor: 'rgba(239, 68, 68, 0.15)',
                 display: 'flex',
@@ -158,23 +159,64 @@ function NowPlayingIndicator({ nowPlaying }) {
                 justifyContent: 'center',
                 animation: 'pulse 2s ease-in-out infinite'
             }}>
-                <Headphones size={28} color="#ef4444" />
+                <Headphones size={26} color="#ef4444" />
             </div>
-            <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#ef4444' }}>
-                    Owner is listening to music
+            <div style={{ textAlign: 'center', width: '100%' }}>
+                <div style={{ 
+                    fontSize: '0.85rem', 
+                    fontWeight: '700', 
+                    color: '#ef4444',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                }}>
+                    <span>Owner is playing music now</span>
                 </div>
                 <div style={{ 
                     fontSize: '0.75rem', 
-                    color: 'var(--text-muted)', 
-                    marginTop: '4px',
-                    maxWidth: '200px',
+                    color: 'var(--text-main)', 
+                    marginTop: '6px',
+                    fontWeight: '500',
+                    maxWidth: '100%',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    padding: '0 8px'
                 }}>
                     {nowPlaying.title}
                 </div>
+                <a 
+                    href={youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        marginTop: '10px',
+                        padding: '8px 14px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        textDecoration: 'none',
+                        transition: 'all 0.2s',
+                        border: '1px solid rgba(239, 68, 68, 0.3)'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                >
+                    <ExternalLink size={14} />
+                    Listen Now
+                </a>
             </div>
             <style>{`
                 @keyframes pulse {
