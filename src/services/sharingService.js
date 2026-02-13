@@ -132,7 +132,7 @@ export const addCollaborator = async (shareDocId, userId, userEmail, displayName
             userId,
             email: userEmail,
             displayName: displayName || userEmail,
-            joinedAt: serverTimestamp()
+            joinedAt: new Date().toISOString() // Use ISO string instead of serverTimestamp in array
         });
         
         await updateDoc(docRef, { collaborators });

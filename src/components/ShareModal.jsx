@@ -650,61 +650,61 @@ export default function ShareModal({ isOpen, onClose }) {
                 </div>
             </div>
 
-            {/* Success Modal - Shows after creating link */}
+            {/* Success Popover - Shows after creating link */}
             {showSuccessModal && newlyCreatedDashboard && (
                 <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
                     backgroundColor: 'var(--bg-card)',
-                    padding: '40px 24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    zIndex: 100,
-                    borderRadius: '20px'
+                    padding: '24px',
+                    borderRadius: '16px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    border: '1px solid var(--border)',
+                    width: '90%',
+                    maxWidth: '400px',
+                    zIndex: 3000,
+                    textAlign: 'center'
                 }}>
                     <div style={{
-                        width: '64px',
-                        height: '64px',
+                        width: '56px',
+                        height: '56px',
                         borderRadius: '50%',
                         backgroundColor: 'rgba(34, 197, 94, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        marginBottom: '20px'
+                        margin: '0 auto 16px auto'
                     }}>
-                        <Check size={32} color="#22c55e" />
+                        <Check size={28} color="#22c55e" />
                     </div>
                     
-                    <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '8px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '6px' }}>
                         Share Link Created!
                     </h3>
                     
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.9rem' }}>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '0.85rem' }}>
                         Your dashboard is ready to share
                     </p>
 
                     {/* Email Status */}
                     {emailStatus && (
-                        <div>
+                        <div style={{ marginBottom: '16px' }}>
                             <div style={{
-                                padding: '12px 16px',
+                                padding: '8px 12px',
                                 backgroundColor: emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.1)' : emailStatus.failed?.length > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
                                 border: `1px solid ${emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.3)' : emailStatus.failed?.length > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
-                                borderRadius: '10px',
-                                marginBottom: emailStatus.failed?.length > 0 ? '10px' : '20px',
+                                borderRadius: '8px',
+                                marginBottom: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '8px',
-                                fontSize: '0.85rem',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                fontSize: '0.8rem',
                                 color: emailStatus.sent === emailStatus.total ? '#22c55e' : emailStatus.failed?.length > 0 ? '#ef4444' : '#3b82f6'
                             }}>
-                                <Mail size={16} />
+                                <Mail size={14} />
                                 {emailStatus === 'sending' ? (
                                     <span>Sending emails...</span>
                                 ) : emailStatus.failed?.length > 0 ? (
@@ -714,66 +714,38 @@ export default function ShareModal({ isOpen, onClose }) {
                                 )}
                             </div>
                             
-                            {/* Show failed email details */}
-                            {emailStatus.failed?.length > 0 && (
-                                <div style={{
-                                    padding: '10px 12px',
-                                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                                    borderRadius: '8px',
-                                    marginBottom: '20px',
-                                    fontSize: '0.75rem',
-                                    color: '#ef4444'
-                                }}>
-                                    <div style={{ fontWeight: '600', marginBottom: '6px' }}>Failed to send to:</div>
-                                    {emailStatus.failed.map((fail, idx) => (
-                                        <div key={idx} style={{ marginBottom: '4px' }}>
-                                            • {fail.email} {fail.error && <span style={{ opacity: 0.7 }}>({fail.error})</span>}
-                                        </div>
-                                    ))}
-                                    <div style={{ marginTop: '8px', color: 'var(--text-muted)' }}>
-                                        Link is still created and can be shared manually or via email below.
-                                    </div>
-                                </div>
-                            )}
-                            
                             {/* Show fallback mailto links */}
                             {emailStatus.fallback?.length > 0 && (
                                 <div style={{
-                                    padding: '12px',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                                    borderRadius: '8px',
-                                    marginBottom: '20px',
-                                    fontSize: '0.8rem'
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '6px'
                                 }}>
-                                    <div style={{ fontWeight: '600', marginBottom: '8px', color: '#3b82f6' }}>
-                                        Send emails manually:
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {emailStatus.fallback.map((fallback, idx) => (
-                                            <a
-                                                key={idx}
-                                                href={fallback.mailtoLink}
-                                                style={{
-                                                    color: '#3b82f6',
-                                                    textDecoration: 'none',
-                                                    padding: '6px 10px',
-                                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                                    borderRadius: '6px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px'
-                                                }}
-                                                onClick={(e) => {
-                                                    // Open in new window for better compatibility
-                                                    window.open(fallback.mailtoLink, '_blank');
-                                                    e.preventDefault();
-                                                }}
-                                            >
-                                                <Mail size={14} />
-                                                Email {fallback.email}
-                                            </a>
-                                        ))}
-                                    </div>
+                                    {emailStatus.fallback.map((fallback, idx) => (
+                                        <a
+                                            key={idx}
+                                            href={fallback.mailtoLink}
+                                            style={{
+                                                color: '#3b82f6',
+                                                textDecoration: 'none',
+                                                padding: '8px',
+                                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                borderRadius: '6px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                fontSize: '0.8rem'
+                                            }}
+                                            onClick={(e) => {
+                                                window.open(fallback.mailtoLink, '_blank');
+                                                e.preventDefault();
+                                            }}
+                                        >
+                                            <Mail size={14} />
+                                            Email {fallback.email}
+                                        </a>
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -782,16 +754,16 @@ export default function ShareModal({ isOpen, onClose }) {
                     {/* Share Link Display */}
                     <div style={{
                         width: '100%',
-                        padding: '16px',
+                        padding: '12px',
                         backgroundColor: 'var(--bg-hover)',
-                        borderRadius: '12px',
-                        marginBottom: '20px'
+                        borderRadius: '10px',
+                        marginBottom: '16px'
                     }}>
                         <label style={{
                             display: 'block',
-                            fontSize: '0.75rem',
+                            fontSize: '0.7rem',
                             color: 'var(--text-muted)',
-                            marginBottom: '8px',
+                            marginBottom: '6px',
                             textAlign: 'left'
                         }}>
                             Share Link
@@ -803,37 +775,38 @@ export default function ShareModal({ isOpen, onClose }) {
                                 readOnly
                                 style={{
                                     flex: 1,
-                                    padding: '12px',
+                                    padding: '10px',
                                     backgroundColor: 'var(--bg-input)',
                                     border: '1px solid var(--border)',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
                                     color: 'var(--text-main)'
                                 }}
                             />
                             <button
                                 onClick={handleCopyNewLink}
                                 style={{
-                                    padding: '12px 20px',
+                                    padding: '10px 16px',
                                     backgroundColor: copiedId === 'new' ? '#22c55e' : 'var(--text-main)',
                                     color: 'white',
-                                    borderRadius: '8px',
+                                    borderRadius: '6px',
                                     fontWeight: '600',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '6px',
-                                    whiteSpace: 'nowrap'
+                                    gap: '4px',
+                                    whiteSpace: 'nowrap',
+                                    fontSize: '0.8rem'
                                 }}
                             >
                                 {copiedId === 'new' ? (
                                     <>
-                                        <Check size={16} />
-                                        Copied!
+                                        <Check size={14} />
+                                        Copied
                                     </>
                                 ) : (
                                     <>
-                                        <Copy size={16} />
-                                        Copy Link
+                                        <Copy size={14} />
+                                        Copy
                                     </>
                                 )}
                             </button>
@@ -841,31 +814,32 @@ export default function ShareModal({ isOpen, onClose }) {
                     </div>
 
                     {/* Action Buttons */}
-                    <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
                         <button
                             onClick={() => window.open(newlyCreatedDashboard.shareLink, '_blank')}
                             style={{
                                 flex: 1,
-                                padding: '14px',
+                                padding: '12px',
                                 backgroundColor: 'var(--bg-hover)',
                                 border: '1px solid var(--border)',
-                                borderRadius: '10px',
+                                borderRadius: '8px',
                                 color: 'var(--text-main)',
                                 fontWeight: '600',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '6px'
+                                gap: '6px',
+                                fontSize: '0.85rem'
                             }}
                         >
                             <ExternalLink size={16} />
-                            Open Link
+                            Open
                         </button>
                         <button
                             onClick={handleCloseSuccessModal}
                             style={{
                                 flex: 1,
-                                padding: '14px',
+                                padding: '12px',
                                 backgroundColor: 'var(--text-main)',
                                 color: 'var(--bg-app)',
                                 borderRadius: '10px',
@@ -876,6 +850,16 @@ export default function ShareModal({ isOpen, onClose }) {
                         </button>
                     </div>
                 </div>
+            )}
+            
+            {/* Overlay backdrop for popover */}
+            {showSuccessModal && newlyCreatedDashboard && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: 2999
+                }} onClick={handleCloseSuccessModal} />
             )}
         </div>
     );
