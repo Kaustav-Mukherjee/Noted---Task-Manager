@@ -9,6 +9,13 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { subscribeUserPreferences, updateUserPreferences } from '../services/firestoreService';
+import { 
+    getSharedDashboard, 
+    canAccessSharedDashboard, 
+    canEditSharedDashboard,
+    addCollaborator,
+    subscribeToSharedDashboard
+} from '../services/sharingService';
 
 const AuthContext = createContext({});
 
@@ -20,6 +27,13 @@ export function AuthProvider({ children }) {
     const [googleToken, setGoogleToken] = useState(localStorage.getItem('google_access_token'));
     const [userPreferences, setUserPreferences] = useState(null);
     const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
+    
+    // Shared dashboard state
+    const [sharedDashboard, setSharedDashboard] = useState(null);
+    const [sharedDashboardOwnerId, setSharedDashboardOwnerId] = useState(null);
+    const [canAccessShared, setCanAccessShared] = useState(false);
+    const [canEditShared, setCanEditShared] = useState(false);
+    const [isSharedMode, setIsSharedMode] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -133,6 +147,60 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('google_access_token');
     };
 
+    // Shared Dashboard Functions
+    const loadSharedDashboard = async (shareId) => {
+        try {
+            const dashboard = await getSharedDashboard(shareId);
+            
+            if (!dashboard) {
+                setSharedDashboard(null);
+                setSharedDashboardOwnerId(null);
+                setCanAccessShared(false);
+                setCanEditShared(false);
+                setIsSharedMode(false);
+                return { success: false, error: 'Dashboard not found' };
+            }
+            
+            const hasAccess = canAccessSharedDashboard(dashboard, user);
+            const hasEditPermission = canEditSharedDashboard(dashboard, user);
+            
+            setSharedDashboard(dashboard);
+            setSharedDashboardOwnerId(dashboard.ownerId);
+            setCanAccessShared(hasAccess);
+            setCanEditShared(hasEditPermission);
+            setIsSharedMode(true);
+            
+            // Add current user as collaborator if they have access
+            if (hasAccess && user && dashboard.id) {
+                await addCollaborator(dashboard.id, user.uid, user.email, user.displayName);
+            }
+            
+            return { 
+                success: hasAccess, 
+                dashboard,
+                canEdit: hasEditPermission,
+                error: hasAccess ? null : 'You do not have access to this dashboard'
+            };
+        } catch (error) {
+            console.error('Error loading shared dashboard:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const clearSharedDashboard = () => {
+        setSharedDashboard(null);
+        setSharedDashboardOwnerId(null);
+        setCanAccessShared(false);
+        setCanEditShared(false);
+        setIsSharedMode(false);
+    };
+
+    const refreshSharedDashboard = async (shareId) => {
+        if (shareId) {
+            return await loadSharedDashboard(shareId);
+        }
+    };
+
     // Email/Password Sign In
     const signInWithEmail = async (email, password) => {
         try {
@@ -178,7 +246,16 @@ export function AuthProvider({ children }) {
         userPreferences,
         updatePreferences,
         isGoogleCalendarConnected,
-        disconnectGoogleCalendar
+        disconnectGoogleCalendar,
+        // Shared dashboard
+        sharedDashboard,
+        sharedDashboardOwnerId,
+        canAccessShared,
+        canEditShared,
+        isSharedMode,
+        loadSharedDashboard,
+        clearSharedDashboard,
+        refreshSharedDashboard
     };
 
     return (

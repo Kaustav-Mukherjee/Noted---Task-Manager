@@ -14,6 +14,165 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
+// Shared Data Access Functions
+// These functions allow accessing data from shared dashboards
+
+// Get tasks from a specific user (for shared dashboard access)
+export const subscribeSharedTasks = (ownerId, callback) => {
+    const q = query(
+        collection(db, 'users', ownerId, 'tasks'),
+        orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+        const tasks = snapshot.docs.map(doc => {
+            const data = doc.data();
+            let taskDate;
+            if (data.date) {
+                if (data.date.toDate) {
+                    taskDate = data.date.toDate().toISOString();
+                } else if (typeof data.date === 'string') {
+                    taskDate = data.date;
+                } else {
+                    taskDate = new Date(data.date).toISOString();
+                }
+            } else if (data.createdAt?.toDate) {
+                taskDate = data.createdAt.toDate().toISOString();
+            } else {
+                taskDate = new Date().toISOString();
+            }
+
+            return {
+                id: doc.id,
+                ...data,
+                date: taskDate
+            };
+        });
+        callback(tasks);
+    });
+};
+
+// Get reminders from a specific user (for shared dashboard access)
+export const subscribeSharedReminders = (ownerId, callback) => {
+    const q = query(
+        collection(db, 'users', ownerId, 'reminders'),
+        orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+        const reminders = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        callback(reminders);
+    });
+};
+
+// Get study sessions from a specific user (for shared dashboard access)
+export const subscribeSharedStudySessions = (ownerId, callback) => {
+    const q = query(
+        collection(db, 'users', ownerId, 'studySessions'),
+        orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+        const sessions = snapshot.docs.map(doc => {
+            const data = doc.data();
+            let sessionDate;
+            if (data.date) {
+                if (data.date.toDate) {
+                    sessionDate = data.date.toDate().toISOString();
+                } else if (typeof data.date === 'string') {
+                    sessionDate = data.date;
+                } else {
+                    sessionDate = new Date(data.date).toISOString();
+                }
+            } else if (data.createdAt?.toDate) {
+                sessionDate = data.createdAt.toDate().toISOString();
+            } else {
+                sessionDate = new Date().toISOString();
+            }
+            
+            return {
+                id: doc.id,
+                ...data,
+                date: sessionDate
+            };
+        });
+        callback(sessions);
+    });
+};
+
+// Get sticky notes from a specific user (for shared dashboard access)
+export const subscribeSharedStickyNotes = (ownerId, callback) => {
+    const q = query(
+        collection(db, 'users', ownerId, 'stickyNotes'),
+        orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+        const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(notes);
+    });
+};
+
+// Get folders from a specific user (for shared dashboard access)
+export const subscribeSharedFolders = (ownerId, callback) => {
+    const q = query(
+        collection(db, 'users', ownerId, 'folders'),
+        orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+        const folders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(folders);
+    });
+};
+
+// Get goals from a specific user (for shared dashboard access)
+export const subscribeSharedGoals = (ownerId, callback) => {
+    const q = query(collection(db, 'users', ownerId, 'goals'));
+    return onSnapshot(q, (snapshot) => {
+        const goals = {};
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            goals[data.id || doc.id] = { id: doc.id, ...data };
+        });
+        callback(goals);
+    });
+};
+
+// Add task to shared dashboard (with ownerId)
+export const addSharedTask = async (ownerId, taskData) => {
+    const docRef = await addDoc(collection(db, 'users', ownerId, 'tasks'), {
+        ...taskData,
+        date: taskData.date || new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    });
+    return docRef.id;
+};
+
+// Update task in shared dashboard
+export const updateSharedTask = async (ownerId, taskId, updates) => {
+    const taskRef = doc(db, 'users', ownerId, 'tasks', taskId);
+    await updateDoc(taskRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+    });
+};
+
+// Delete task from shared dashboard
+export const deleteSharedTask = async (ownerId, taskId) => {
+    const taskRef = doc(db, 'users', ownerId, 'tasks', taskId);
+    await deleteDoc(taskRef);
+};
+
+// Add study session to shared dashboard
+export const addSharedStudySession = async (ownerId, sessionData) => {
+    const docRef = await addDoc(collection(db, 'users', ownerId, 'studySessions'), {
+        ...sessionData,
+        date: sessionData.date || new Date().toISOString(),
+        createdAt: serverTimestamp()
+    });
+    return docRef.id;
+};
+
 // Tasks Collection
 export const tasksCollection = (userId) => collection(db, 'users', userId, 'tasks');
 
