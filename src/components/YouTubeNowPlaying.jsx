@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Youtube, Play, X, Search, Link as LinkIcon } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { saveUserNowPlaying } from '../services/firestoreService';
 
 function YouTubeNowPlaying() {
+    const { user } = useAuth();
     const [videoId, setVideoId] = useState('jfKfPfyJRdk'); // Default lofi girl
     const [tempUrl, setTempUrl] = useState('');
     const [showInput, setShowInput] = useState(false);
+
+    // Save to Firestore when video changes
+    useEffect(() => {
+        if (user) {
+            saveUserNowPlaying(user.uid, { videoId });
+        }
+    }, [videoId, user]);
 
     const extractVideoId = (url) => {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;

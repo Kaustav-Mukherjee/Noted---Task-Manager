@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Zap, MoreHorizontal, Settings, Clock, Timer as TimerIcon } from 'lucide-react';
 import { playAlertSound } from '../utils/sound';
+import { useAuth } from '../contexts/AuthContext';
+import { saveUserTimerState } from '../services/firestoreService';
 
 const MODES = {
     FOCUS: { label: 'Focus', minutes: 25, color: '#3b82f6' },
@@ -9,6 +11,7 @@ const MODES = {
 };
 
 function FocusTimer({ onTimerComplete }) {
+    const { user } = useAuth();
     const [mode, setMode] = useState('FOCUS');
     const [isTimerMode, setIsTimerMode] = useState(true);
     const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
@@ -60,7 +63,7 @@ function FocusTimer({ onTimerComplete }) {
         }
     }, []);
 
-    // Save state to localStorage whenever it changes
+    // Save state to localStorage and Firestore whenever it changes
     useEffect(() => {
         const stateToSave = {
             mode,
@@ -68,11 +71,16 @@ function FocusTimer({ onTimerComplete }) {
             timeLeft,
             useSeconds,
             isActive,
-            customDuration, // Save custom duration
+            customDuration,
             startTime: isActive ? (startTimeRef.current || Date.now()) : null
         };
         localStorage.setItem('focusTimerState', JSON.stringify(stateToSave));
-    }, [mode, isTimerMode, timeLeft, useSeconds, isActive, customDuration]);
+        
+        // Also save to Firestore for sharing
+        if (user) {
+            saveUserTimerState(user.uid, stateToSave);
+        }
+    }, [mode, isTimerMode, timeLeft, useSeconds, isActive, customDuration, user]);
 
     useEffect(() => {
         if (isActive) {

@@ -151,38 +151,107 @@ export const subscribeSharedUserPreferences = (ownerId, callback) => {
 
 // Get user stats/streak from a specific user (for shared dashboard access)
 export const subscribeSharedUserStats = (ownerId, callback) => {
+    console.log('Firestore: Subscribing to user stats for', ownerId);
     const statsRef = doc(db, 'users', ownerId, 'stats', 'main');
-    return onSnapshot(statsRef, (snapshot) => {
-        if (snapshot.exists()) {
-            callback(snapshot.data());
-        } else {
+    return onSnapshot(statsRef, 
+        (snapshot) => {
+            if (snapshot.exists()) {
+                console.log('Firestore: User stats received:', snapshot.data());
+                callback(snapshot.data());
+            } else {
+                console.log('Firestore: No user stats found, returning default');
+                callback({ streak: 0 });
+            }
+        },
+        (error) => {
+            console.error('Firestore: Error subscribing to user stats:', error);
             callback({ streak: 0 });
         }
-    });
+    );
 };
 
 // Get timer state from a specific user (for shared dashboard access)
 export const subscribeSharedTimerState = (ownerId, callback) => {
+    console.log('Firestore: Subscribing to timer state for', ownerId);
     const timerRef = doc(db, 'users', ownerId, 'timer', 'state');
-    return onSnapshot(timerRef, (snapshot) => {
-        if (snapshot.exists()) {
-            callback(snapshot.data());
-        } else {
+    return onSnapshot(timerRef, 
+        (snapshot) => {
+            if (snapshot.exists()) {
+                console.log('Firestore: Timer state received:', snapshot.data());
+                callback(snapshot.data());
+            } else {
+                console.log('Firestore: No timer state found');
+                callback(null);
+            }
+        },
+        (error) => {
+            console.error('Firestore: Error subscribing to timer state:', error);
             callback(null);
         }
-    });
+    );
 };
 
 // Get now playing from a specific user (for shared dashboard access)
 export const subscribeSharedNowPlaying = (ownerId, callback) => {
+    console.log('Firestore: Subscribing to now playing for', ownerId);
     const nowPlayingRef = doc(db, 'users', ownerId, 'nowPlaying', 'current');
-    return onSnapshot(nowPlayingRef, (snapshot) => {
-        if (snapshot.exists()) {
-            callback(snapshot.data());
-        } else {
-            callback({ videoId: 'jfKfPfyJRdk' }); // Default lofi
+    return onSnapshot(nowPlayingRef, 
+        (snapshot) => {
+            if (snapshot.exists()) {
+                console.log('Firestore: Now playing received:', snapshot.data());
+                callback(snapshot.data());
+            } else {
+                console.log('Firestore: No now playing found, returning default');
+                callback({ videoId: 'jfKfPfyJRdk' }); // Default lofi
+            }
+        },
+        (error) => {
+            console.error('Firestore: Error subscribing to now playing:', error);
+            callback({ videoId: 'jfKfPfyJRdk' });
         }
-    });
+    );
+};
+
+// Save user's timer state to Firestore (for sharing)
+export const saveUserTimerState = async (userId, timerState) => {
+    try {
+        const timerRef = doc(db, 'users', userId, 'timer', 'state');
+        await setDoc(timerRef, {
+            ...timerState,
+            updatedAt: serverTimestamp()
+        });
+        console.log('Firestore: Timer state saved');
+    } catch (error) {
+        console.error('Firestore: Error saving timer state:', error);
+    }
+};
+
+// Save user's now playing to Firestore (for sharing)
+export const saveUserNowPlaying = async (userId, nowPlayingData) => {
+    try {
+        const nowPlayingRef = doc(db, 'users', userId, 'nowPlaying', 'current');
+        await setDoc(nowPlayingRef, {
+            ...nowPlayingData,
+            updatedAt: serverTimestamp()
+        });
+        console.log('Firestore: Now playing saved');
+    } catch (error) {
+        console.error('Firestore: Error saving now playing:', error);
+    }
+};
+
+// Save user's stats to Firestore (for sharing)
+export const saveUserStats = async (userId, stats) => {
+    try {
+        const statsRef = doc(db, 'users', userId, 'stats', 'main');
+        await setDoc(statsRef, {
+            ...stats,
+            updatedAt: serverTimestamp()
+        });
+        console.log('Firestore: User stats saved');
+    } catch (error) {
+        console.error('Firestore: Error saving user stats:', error);
+    }
 };
 
 // Add task to shared dashboard (with ownerId)
