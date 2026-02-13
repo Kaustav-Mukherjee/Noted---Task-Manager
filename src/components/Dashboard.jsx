@@ -1,11 +1,10 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
-import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown, Calendar as CalendarIcon, RefreshCw, Link, MapPin, FileText, Users, Video, Clock, Goal, Plus, Zap, AlertCircle, Settings, Share2 } from 'lucide-react';
+import { StickyNote, BookOpen, Edit2, X, Trash2, Bell, ChevronRight, ChevronDown, Calendar as CalendarIcon, RefreshCw, Link, MapPin, FileText, Users, Video, Clock, Goal, Plus, Zap, AlertCircle, Settings } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, isSameDay, isSameMonth, subDays, subMonths, addMonths, parseISO, isAfter, isBefore } from 'date-fns';
 import RemindersCard from './RemindersCard';
 import StickyNotesSection from './StickyNotesSection';
 import QuotesSection from './QuotesSection';
-import ShareModal from './ShareModal';
 import { useAuth } from '../contexts/AuthContext';
 import { getCalendarEvents, buildCalendarEvent, isApiNotEnabledError, isAuthError } from '../services/googleCalendarService';
 
@@ -100,7 +99,6 @@ function Dashboard({
     const [showNavPopover, setShowNavPopover] = useState(false);
     const [isCalendarMinimized, setIsCalendarMinimized] = useState(false);
     const [showCalendarSettings, setShowCalendarSettings] = useState(false);
-    const [showShareModal, setShowShareModal] = useState(false);
 
     // Google Calendar State
     const [googleEvents, setGoogleEvents] = useState([]);
@@ -526,30 +524,6 @@ function Dashboard({
     return (
         <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
-
-            {/* Share Button */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 4px' }}>
-                <button
-                    onClick={() => setShowShareModal(true)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 18px',
-                        backgroundColor: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '12px',
-                        color: 'var(--text-main)',
-                        fontWeight: '600',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                    }}
-                >
-                    <Share2 size={16} />
-                    Share Dashboard
-                </button>
-            </div>
 
             {/* Top Row: Streak & Quotes */}
             <div className="dashboard-stats-grid">
@@ -1441,10 +1415,6 @@ function Dashboard({
         )}
 
             {/* Share Modal */}
-            <ShareModal 
-                isOpen={showShareModal} 
-                onClose={() => setShowShareModal(false)} 
-            />
         </>
     );
 }

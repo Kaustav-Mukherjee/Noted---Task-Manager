@@ -8,7 +8,8 @@ import Dashboard from './components/Dashboard';
 import AuthModal from './components/AuthModal';
 import FocusTimer from './components/FocusTimer';
 import YouTubeNowPlaying from './components/YouTubeNowPlaying';
-import { Zap } from 'lucide-react';
+import ShareModal from './components/ShareModal';
+import { Zap, Share2 } from 'lucide-react';
 import * as firestoreService from './services/firestoreService';
 import { playAlertSound } from './utils/sound';
 
@@ -17,6 +18,7 @@ function App() {
     const { user } = useAuth();
     const [theme, setTheme] = useState('dark');
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     // Local state (initialized empty)
     const [tasks, setTasks] = useState([]);
@@ -396,9 +398,31 @@ function App() {
 
                         {/* Focus Mode - Side by Side */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-md)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Zap size={18} fill="var(--text-main)" stroke="none" />
-                                <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Zap size={18} fill="var(--text-main)" stroke="none" />
+                                    <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
+                                </div>
+                                <button
+                                    onClick={() => setShowShareModal(true)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '8px 14px',
+                                        backgroundColor: 'var(--bg-card)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '10px',
+                                        color: 'var(--text-main)',
+                                        fontWeight: '600',
+                                        fontSize: '0.8rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    <Share2 size={14} />
+                                    Share Dashboard
+                                </button>
                             </div>
 
                             <div className="focus-mode-grid">
@@ -442,6 +466,7 @@ function App() {
             </div>
 
             <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+            <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
         </>
     );
 }
