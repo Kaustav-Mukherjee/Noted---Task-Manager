@@ -8,17 +8,17 @@ import { format, isSameDay, subDays, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import Lottie from 'lottie-react';
 
-// Lottie Animation URLs
+// Real Lottie Animation URLs from LottieFiles
 const LOTTIE_ANIMATIONS = {
-    loading: 'https://lottie.host/5c6d5c4d-5c3d-4c6e-9c1c-3e7d4f8e9b1a/XyZ123ABC.json', // Loading spinner
-    error: 'https://lottie.host/8f9e8d7c-6b5a-4c3d-2e1f-0a9b8c7d6e5f/ErrorABC123.json', // Error/lock
-    streak: 'https://lottie.host/9f8e7d6c-5b4a-3c2d-1e0f-9a8b7c6d5e4f/FireAnimation.json', // Fire/streak
-    tasks: 'https://lottie.host/1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p/CheckAnimation.json', // Tasks/check
-    study: 'https://lottie.host/2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q/BookAnimation.json', // Study/book
-    focus: 'https://lottie.host/3c4d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r/ZapAnimation.json', // Focus/zap
-    music: 'https://lottie.host/4d5e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s/MusicAnimation.json', // Music/headphones
-    goals: 'https://lottie.host/5e6f7g8h-9i0j-1k2l-3m4n-5o6p7q8r9s0t/TargetAnimation.json', // Goals/target
-    empty: 'https://lottie.host/6f7g8h9i-0j1k-2l3m-4n5o-6p7q8r9s0t1u/EmptyAnimation.json', // Empty state
+    loading: 'https://assets2.lottiefiles.com/packages/lf20_UJNc2t.json', // Loading spinner
+    fire: 'https://assets10.lottiefiles.com/packages/lf20_3jmvq04g.json', // Fire/streak
+    check: 'https://assets2.lottiefiles.com/packages/lf20_s2lryxtd.json', // Checkmark
+    book: 'https://assets9.lottiefiles.com/packages/lf20_1idqu1ac.json', // Book/study
+    zap: 'https://assets3.lottiefiles.com/packages/lf20_hu7birqV.json', // Zap/focus
+    music: 'https://assets4.lottiefiles.com/packages/lf20_6wutsrox.json', // Music/headphones
+    target: 'https://assets8.lottiefiles.com/packages/lf20_qp1q7mct.json', // Target/goals
+    empty: 'https://assets5.lottiefiles.com/packages/lf20_s8pbrcfw.json', // Empty state
+    lock: 'https://assets1.lottiefiles.com/packages/lf20_6w34Hv.json', // Lock/error
 };
 
 // Fallback simple animations using CSS when Lottie fails or for specific states
@@ -626,7 +626,7 @@ export default function SharedDashboardView() {
                     }}>
                         <div style={{ width: 50, height: 50 }}>
                             <LottieAnimation 
-                                animationData={LOTTIE_ANIMATIONS.streak}
+                                animationData={LOTTIE_ANIMATIONS.fire}
                                 fallback={
                                     <div style={{
                                         width: 44,
@@ -666,7 +666,7 @@ export default function SharedDashboardView() {
                     }}>
                         <div style={{ width: 50, height: 50 }}>
                             <LottieAnimation 
-                                animationData={LOTTIE_ANIMATIONS.tasks}
+                                animationData={LOTTIE_ANIMATIONS.check}
                                 fallback={
                                     <div style={{
                                         width: 44,
@@ -729,7 +729,7 @@ export default function SharedDashboardView() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{ width: 40, height: 40 }}>
                                 <LottieAnimation 
-                                    animationData={LOTTIE_ANIMATIONS.tasks}
+                                    animationData={LOTTIE_ANIMATIONS.check}
                                     fallback={
                                         <div style={{
                                             width: 36,
@@ -802,7 +802,7 @@ export default function SharedDashboardView() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{ width: 40, height: 40 }}>
                                 <LottieAnimation 
-                                    animationData={LOTTIE_ANIMATIONS.study}
+                                    animationData={LOTTIE_ANIMATIONS.book}
                                     fallback={
                                         <div style={{
                                             width: 36,
@@ -869,7 +869,7 @@ export default function SharedDashboardView() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{ width: 40, height: 40 }}>
                                 <LottieAnimation 
-                                    animationData={LOTTIE_ANIMATIONS.goals}
+                                    animationData={LOTTIE_ANIMATIONS.target}
                                     fallback={
                                         <div style={{
                                             width: 36,
