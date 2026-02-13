@@ -33,7 +33,7 @@ function FocusTimer({ onTimerComplete }) {
             setIsTimerMode(state.isTimerMode !== false);
             setTimeLeft(state.timeLeft || MODES.FOCUS.minutes * 60);
             setUseSeconds(state.useSeconds || 0);
-            setIsActive(state.isActive || false);
+            setIsActive(false); // Always start paused to prevent auto-completion
             if (state.customDuration) setCustomDuration(state.customDuration); // Restore custom duration
 
             if (state.isActive && state.startTime) {
@@ -45,8 +45,11 @@ function FocusTimer({ onTimerComplete }) {
                         startTimeRef.current = state.startTime;
                         elapsedRef.current = elapsedSinceStart;
                     } else {
-                        setTimeLeft(0);
+                        // Timer expired while away - reset without logging
+                        setTimeLeft(MODES.FOCUS.minutes * 60);
                         setIsActive(false);
+                        // Clear the saved state to prevent issues
+                        localStorage.removeItem('focusTimerState');
                     }
                 } else {
                     setUseSeconds(state.useSeconds + elapsedSinceStart);

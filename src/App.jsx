@@ -269,12 +269,30 @@ function App() {
     const dailyGoalHours = goals?.dailyStudyGoal?.hours || 4;
     const todayStudyHours = useMemo(() => {
         const today = new Date();
-        return studySessions
-            .filter(s => {
-                const sessionDate = new Date(s.date);
-                return isSameDay(sessionDate, today);
-            })
-            .reduce((acc, curr) => acc + curr.hours, 0);
+        console.log('=== APP.JSX DEBUG ===');
+        console.log('Today:', today);
+        console.log('Study sessions count:', studySessions.length);
+        
+        if (!Array.isArray(studySessions)) {
+            console.error('studySessions is not an array:', studySessions);
+            return 0;
+        }
+        
+        const todaysSessions = studySessions.filter(s => {
+            const sessionDate = new Date(s.date);
+            const isToday = isSameDay(sessionDate, today);
+            if (isToday) {
+                console.log('Today\'s session:', s.id, 'hours:', s.hours, 'date:', s.date);
+            }
+            return isToday;
+        });
+        
+        const total = todaysSessions.reduce((acc, curr) => {
+            const hours = parseFloat(curr.hours) || 0;
+            return acc + hours;
+        }, 0);
+        console.log('App.jsx calculated total:', total);
+        return total;
     }, [studySessions]);
     
     // Check if goal is completed and trigger celebration

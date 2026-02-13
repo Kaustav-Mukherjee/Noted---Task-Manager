@@ -279,9 +279,30 @@ function Dashboard({
     const dailyGoalHours = goals?.dailyStudyGoal?.hours || 4; // Default 4 hours if not set
 
     const todayStudyHours = useMemo(() => {
-        return studySessions
-            .filter(s => safeIsSameDay(s.date, today))
-            .reduce((acc, curr) => acc + curr.hours, 0);
+        console.log('=== DEBUG: Calculating todayStudyHours ===');
+        console.log('Today:', today);
+        console.log('All study sessions:', studySessions);
+        
+        // Ensure studySessions is an array
+        if (!Array.isArray(studySessions)) {
+            console.error('studySessions is not an array:', studySessions);
+            return 0;
+        }
+        
+        const todaysSessions = studySessions.filter(s => {
+            const isToday = safeIsSameDay(s.date, today);
+            console.log(`Session ${s.id}: date=${s.date}, hours=${s.hours} (type: ${typeof s.hours}), isToday=${isToday}`);
+            return isToday;
+        });
+        console.log('Today\'s sessions:', todaysSessions);
+        
+        // Parse hours as float to ensure proper calculation
+        const total = todaysSessions.reduce((acc, curr) => {
+            const hours = parseFloat(curr.hours) || 0;
+            return acc + hours;
+        }, 0);
+        console.log('Total hours:', total);
+        return total;
     }, [studySessions, today]);
 
     const goalProgress = Math.min(100, (todayStudyHours / dailyGoalHours) * 100);
