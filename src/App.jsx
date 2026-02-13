@@ -9,7 +9,8 @@ import AuthModal from './components/AuthModal';
 import FocusTimer from './components/FocusTimer';
 import YouTubeNowPlaying from './components/YouTubeNowPlaying';
 import ShareModal from './components/ShareModal';
-import { Zap, Share2 } from 'lucide-react';
+import HabitTracker from './components/HabitTracker';
+import { Zap, Share2, Target } from 'lucide-react';
 import * as firestoreService from './services/firestoreService';
 import { playAlertSound } from './utils/sound';
 
@@ -19,6 +20,7 @@ function App() {
     const [theme, setTheme] = useState('dark');
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+    const [showHabitTracker, setShowHabitTracker] = useState(false);
 
     // Local state (initialized empty)
     const [tasks, setTasks] = useState([]);
@@ -403,26 +405,48 @@ function App() {
                                     <Zap size={18} fill="var(--text-main)" stroke="none" />
                                     <h3 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Mode</h3>
                                 </div>
-                                <button
-                                    onClick={() => setShowShareModal(true)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '8px 14px',
-                                        backgroundColor: 'var(--bg-card)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: '10px',
-                                        color: 'var(--text-main)',
-                                        fontWeight: '600',
-                                        fontSize: '0.8rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                >
-                                    <Share2 size={14} />
-                                    Share Dashboard
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={() => setShowHabitTracker(true)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '8px 14px',
+                                            backgroundColor: 'var(--bg-card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '10px',
+                                            color: 'var(--text-main)',
+                                            fontWeight: '600',
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <Target size={14} />
+                                        Habit Tracker
+                                    </button>
+                                    <button
+                                        onClick={() => setShowShareModal(true)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '8px 14px',
+                                            backgroundColor: 'var(--bg-card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '10px',
+                                            color: 'var(--text-main)',
+                                            fontWeight: '600',
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <Share2 size={14} />
+                                        Share Dashboard
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="focus-mode-grid">
@@ -467,6 +491,7 @@ function App() {
 
             <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
             <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
+            <HabitTracker isOpen={showHabitTracker} onClose={() => setShowHabitTracker(false)} />
         </>
     );
 }

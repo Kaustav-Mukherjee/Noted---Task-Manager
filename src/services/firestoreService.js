@@ -566,4 +566,80 @@ export const subscribeGoals = (userId, callback) => {
     });
 };
 
+// Habits Collection
+export const habitsCollection = (userId) => collection(db, 'users', userId, 'habits');
+
+export const addHabit = async (userId, habitData) => {
+    const docRef = await addDoc(habitsCollection(userId), {
+        ...habitData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    });
+    return docRef.id;
+};
+
+export const updateHabit = async (userId, habitId, updates) => {
+    const habitRef = doc(db, 'users', userId, 'habits', habitId);
+    await updateDoc(habitRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+    });
+};
+
+export const deleteHabit = async (userId, habitId) => {
+    const habitRef = doc(db, 'users', userId, 'habits', habitId);
+    await deleteDoc(habitRef);
+};
+
+export const subscribeHabits = (userId, callback) => {
+    const q = query(habitsCollection(userId), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+        const habits = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        callback(habits);
+    });
+};
+
+// Habit Completions Collection
+export const habitCompletionsCollection = (userId) => collection(db, 'users', userId, 'habitCompletions');
+
+export const addHabitCompletion = async (userId, habitId, date) => {
+    const completionId = `${habitId}_${date}`;
+    const completionRef = doc(db, 'users', userId, 'habitCompletions', completionId);
+    await setDoc(completionRef, {
+        habitId,
+        date,
+        completed: true,
+        createdAt: serverTimestamp()
+    });
+    return completionId;
+};
+
+export const removeHabitCompletion = async (userId, habitId, date) => {
+    const completionId = `${habitId}_${date}`;
+    const completionRef = doc(db, 'users', userId, 'habitCompletions', completionId);
+    await deleteDoc(completionRef);
+};
+
+export const toggleHabitCompletion = async (userId, habitId, date, isCompleted) => {
+    if (isCompleted) {
+        await addHabitCompletion(userId, habitId, date);
+    } else {
+        await removeHabitCompletion(userId, habitId, date);
+    }
+};
+
+export const subscribeHabitCompletions = (userId, callback) => {
+    const q = query(habitCompletionsCollection(userId), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+        const completions = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        callback(completions);
+    });
+};
+
 
