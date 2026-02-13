@@ -87,7 +87,7 @@ function FocusTimer({ onTimerComplete }) {
             clearInterval(timerRef.current);
             if (!startTimeRef.current) {
                 startTimeRef.current = Date.now();
-                elapsedRef.current = 0;
+                // Don't reset elapsedRef.current - it stores the accumulated time before pause
             }
 
             timerRef.current = setInterval(() => {
