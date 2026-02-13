@@ -71,38 +71,54 @@ export default function SharedDashboardView() {
 
     // Subscribe to shared data when dashboard is loaded
     useEffect(() => {
-        if (!isSharedMode || !sharedDashboardOwnerId || !canAccessShared) return;
+        if (!isSharedMode || !sharedDashboardOwnerId || !canAccessShared) {
+            console.log('SharedDashboard: Not loading data - conditions not met', {
+                isSharedMode,
+                sharedDashboardOwnerId,
+                canAccessShared
+            });
+            return;
+        }
 
         const ownerId = sharedDashboardOwnerId;
+        console.log('SharedDashboard: Loading data for owner:', ownerId);
 
         const unsubTasks = firestoreService.subscribeSharedTasks(ownerId, (data) => {
+            console.log('SharedDashboard: Tasks loaded:', data.length);
             setTasks(data);
         });
 
         const unsubReminders = firestoreService.subscribeSharedReminders(ownerId, (data) => {
+            console.log('SharedDashboard: Reminders loaded:', data.length);
             setReminders(data);
         });
 
         const unsubStudy = firestoreService.subscribeSharedStudySessions(ownerId, (data) => {
+            console.log('SharedDashboard: Study sessions loaded:', data.length);
             setStudySessions(data);
         });
 
         const unsubNotes = firestoreService.subscribeSharedStickyNotes(ownerId, (data) => {
+            console.log('SharedDashboard: Notes loaded:', data.length);
             setNotes(data);
         });
 
         const unsubFolders = firestoreService.subscribeSharedFolders(ownerId, (data) => {
+            console.log('SharedDashboard: Folders loaded:', data.length);
             setFolders(data);
         });
 
         const unsubGoals = firestoreService.subscribeSharedGoals(ownerId, (data) => {
-            setGoals(data);
+            console.log('SharedDashboard: Goals loaded:', data);
+            setGoals(data || {});
         });
 
         // Calculate streak from tasks
         const calculateStreak = () => {
             const today = new Date();
             let currentStreak = 0;
+            
+            console.log('SharedDashboard: Calculating streak from', tasks.length, 'tasks');
             
             for (let i = 0; i < 365; i++) {
                 const checkDate = subDays(today, i);
@@ -121,10 +137,15 @@ export default function SharedDashboardView() {
                 }
             }
             
+            console.log('SharedDashboard: Streak calculated:', currentStreak);
             setStreak(currentStreak);
         };
 
-        calculateStreak();
+        if (tasks.length > 0) {
+            calculateStreak();
+        } else {
+            setStreak(0);
+        }
 
         return () => {
             unsubTasks();
@@ -558,7 +579,8 @@ export default function SharedDashboardView() {
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        minHeight: '400px'
                     }}>
                         <FocusTimer onTimerComplete={handleTimerComplete} />
                     </div>
@@ -570,40 +592,41 @@ export default function SharedDashboardView() {
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        minHeight: '400px'
                     }}>
                         <YouTubeNowPlaying />
                     </div>
 
                     {/* Daily Goals */}
-                    {goals && Object.keys(goals).length > 0 && (
-                        <div style={{
-                            gridColumn: 'span 3',
-                            backgroundColor: 'var(--bg-card)',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border)',
-                            padding: '24px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '16px'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '12px',
-                                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Target size={20} color="#22c55e" />
-                                </div>
-                                <h3 style={{ fontSize: '1rem', fontWeight: '600' }}>Daily Goals</h3>
+                    <div style={{
+                        gridColumn: 'span 3',
+                        backgroundColor: 'var(--bg-card)',
+                        borderRadius: '20px',
+                        border: '1px solid var(--border)',
+                        padding: '24px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '12px',
+                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <Target size={20} color="#22c55e" />
                             </div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: '600' }}>Daily Goals</h3>
+                        </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                                {Object.entries(goals).slice(0, 3).map(([key, goal]) => (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                            {goals && Object.keys(goals).length > 0 ? (
+                                Object.entries(goals).slice(0, 3).map(([key, goal]) => (
                                     <div key={key} style={{
                                         padding: '12px',
                                         backgroundColor: 'var(--bg-hover)',
@@ -632,10 +655,21 @@ export default function SharedDashboardView() {
                                             }} />
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                ))
+                            ) : (
+                                <div style={{ 
+                                    flex: 1, 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    color: 'var(--text-muted)',
+                                    fontSize: '0.85rem'
+                                }}>
+                                    No goals set yet
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* Recent Tasks List - Full Width */}
                     <div style={{
