@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Link, Copy, Check, Users, Lock, Unlock, Trash2, Share2 } from 'lucide-react';
+import { X, Link, Copy, Check, Users, Lock, Unlock, Trash2, Share2, Mail, ExternalLink } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
     createSharedDashboard, 
@@ -7,7 +7,8 @@ import {
     deleteSharedDashboard,
     subscribeToUserSharedDashboards,
     copyShareLink,
-    canAccessSharedDashboard
+    canAccessSharedDashboard,
+    sendInvitationEmails
 } from '../services/sharingService';
 
 export default function ShareModal({ isOpen, onClose }) {
@@ -19,6 +20,9 @@ export default function ShareModal({ isOpen, onClose }) {
     const [allowedEmails, setAllowedEmails] = useState('');
     const [copiedId, setCopiedId] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [newlyCreatedDashboard, setNewlyCreatedDashboard] = useState(null);
+    const [emailStatus, setEmailStatus] = useState(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         if (!user || !isOpen) return;
@@ -33,6 +37,7 @@ export default function ShareModal({ isOpen, onClose }) {
     const handleCreateDashboard = async () => {
         if (!user) return;
         setLoading(true);
+        setEmailStatus(null);
         
         try {
             const emailList = allowedEmails
@@ -40,19 +45,40 @@ export default function ShareModal({ isOpen, onClose }) {
                 .map(email => email.trim())
                 .filter(email => email.length > 0);
 
-            await createSharedDashboard(user.uid, {
+            const newDashboard = await createSharedDashboard(user.uid, {
                 title: newDashboardTitle,
                 permissions: newDashboardPermissions,
                 allowedEmails: emailList
             });
             
+            // Send invitation emails if email addresses are provided
+            if (emailList.length > 0) {
+                setEmailStatus('sending');
+                const emailResults = await sendInvitationEmails(
+                    emailList,
+                    newDashboard.shareLink,
+                    newDashboardTitle,
+                    user.email,
+                    newDashboardPermissions
+                );
+                
+                const successfulSends = emailResults.filter(r => r.success).length;
+                setEmailStatus({
+                    sent: successfulSends,
+                    total: emailList.length,
+                    results: emailResults
+                });
+            }
+            
+            setNewlyCreatedDashboard(newDashboard);
+            setShowSuccessModal(true);
             setIsCreating(false);
             setNewDashboardTitle('My Dashboard');
             setNewDashboardPermissions('view');
             setAllowedEmails('');
         } catch (error) {
             console.error('Error creating shared dashboard:', error);
-            alert('Failed to create shared dashboard');
+            alert('Failed to create shared dashboard: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -64,6 +90,22 @@ export default function ShareModal({ isOpen, onClose }) {
             setCopiedId(id);
             setTimeout(() => setCopiedId(null), 2000);
         }
+    };
+
+    const handleCopyNewLink = async () => {
+        if (newlyCreatedDashboard) {
+            const success = await copyShareLink(newlyCreatedDashboard.shareLink);
+            if (success) {
+                setCopiedId('new');
+                setTimeout(() => setCopiedId(null), 2000);
+            }
+        }
+    };
+
+    const handleCloseSuccessModal = () => {
+        setShowSuccessModal(false);
+        setNewlyCreatedDashboard(null);
+        setEmailStatus(null);
     };
 
     const handleDeleteDashboard = async (dashboardId) => {
@@ -481,7 +523,7 @@ export default function ShareModal({ isOpen, onClose }) {
                                 <textarea
                                     value={allowedEmails}
                                     onChange={(e) => setAllowedEmails(e.target.value)}
-                                    placeholder="Enter email addresses separated by commas (leave empty for anyone with link)"
+                                    placeholder="Enter email addresses separated by commas (invitation emails will be sent automatically)"
                                     rows={3}
                                     style={{
                                         width: '100%',
@@ -499,7 +541,7 @@ export default function ShareModal({ isOpen, onClose }) {
                                     color: 'var(--text-muted)',
                                     marginTop: '6px'
                                 }}>
-                                    Leave empty to allow anyone with the link to access
+                                    Invitation emails will be sent automatically. Leave empty to allow anyone with the link to access.
                                 </p>
                             </div>
 
@@ -523,6 +565,164 @@ export default function ShareModal({ isOpen, onClose }) {
                     )}
                 </div>
             </div>
+
+            {/* Success Modal - Shows after creating link */}
+            {showSuccessModal && newlyCreatedDashboard && (
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: 'var(--bg-card)',
+                    borderRadius: '20px',
+                    padding: '32px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    zIndex: 10
+                }}>
+                    <div style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '20px'
+                    }}>
+                        <Check size={32} color="#22c55e" />
+                    </div>
+                    
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '8px' }}>
+                        Share Link Created!
+                    </h3>
+                    
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.9rem' }}>
+                        Your dashboard is ready to share
+                    </p>
+
+                    {/* Email Status */}
+                    {emailStatus && (
+                        <div style={{
+                            padding: '12px 16px',
+                            backgroundColor: emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                            border: `1px solid ${emailStatus.sent === emailStatus.total ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
+                            borderRadius: '10px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '0.85rem',
+                            color: emailStatus.sent === emailStatus.total ? '#22c55e' : '#3b82f6'
+                        }}>
+                            <Mail size={16} />
+                            {emailStatus === 'sending' ? (
+                                <span>Sending emails...</span>
+                            ) : (
+                                <span>Emails sent: {emailStatus.sent}/{emailStatus.total}</span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Share Link Display */}
+                    <div style={{
+                        width: '100%',
+                        padding: '16px',
+                        backgroundColor: 'var(--bg-hover)',
+                        borderRadius: '12px',
+                        marginBottom: '20px'
+                    }}>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '0.75rem',
+                            color: 'var(--text-muted)',
+                            marginBottom: '8px',
+                            textAlign: 'left'
+                        }}>
+                            Share Link
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input
+                                type="text"
+                                value={newlyCreatedDashboard.shareLink}
+                                readOnly
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    backgroundColor: 'var(--bg-input)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    color: 'var(--text-main)'
+                                }}
+                            />
+                            <button
+                                onClick={handleCopyNewLink}
+                                style={{
+                                    padding: '12px 20px',
+                                    backgroundColor: copiedId === 'new' ? '#22c55e' : 'var(--text-main)',
+                                    color: 'white',
+                                    borderRadius: '8px',
+                                    fontWeight: '600',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {copiedId === 'new' ? (
+                                    <>
+                                        <Check size={16} />
+                                        Copied!
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy size={16} />
+                                        Copy Link
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                        <button
+                            onClick={() => window.open(newlyCreatedDashboard.shareLink, '_blank')}
+                            style={{
+                                flex: 1,
+                                padding: '14px',
+                                backgroundColor: 'var(--bg-hover)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '10px',
+                                color: 'var(--text-main)',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            <ExternalLink size={16} />
+                            Open Link
+                        </button>
+                        <button
+                            onClick={handleCloseSuccessModal}
+                            style={{
+                                flex: 1,
+                                padding: '14px',
+                                backgroundColor: 'var(--text-main)',
+                                color: 'var(--bg-app)',
+                                borderRadius: '10px',
+                                fontWeight: '700'
+                            }}
+                        >
+                            Done
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

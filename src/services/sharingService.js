@@ -14,6 +14,12 @@ import {
     getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import emailjs from '@emailjs/browser';
+
+// EmailJS Configuration
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 // Shared Dashboards Collection
 export const sharedDashboardsCollection = () => collection(db, 'sharedDashboards');
@@ -166,4 +172,50 @@ export const copyShareLink = async (shareLink) => {
         console.error('Failed to copy:', err);
         return false;
     }
+};
+
+// Send invitation email using EmailJS
+export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTitle, ownerEmail, permissions) => {
+    // Check if EmailJS is configured
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+        console.warn('EmailJS not configured. Skipping email send.');
+        return { success: false, error: 'Email service not configured' };
+    }
+
+    try {
+        const templateParams = {
+            to_email: recipientEmail,
+            to_name: recipientEmail.split('@')[0],
+            from_name: ownerEmail || 'Noted App',
+            dashboard_title: dashboardTitle || 'Shared Dashboard',
+            share_link: shareLink,
+            permissions: permissions === 'edit' ? 'Can Edit' : 'View Only',
+            message: `You've been invited to collaborate on a dashboard. Click the link above to access it.`
+        };
+
+        const response = await emailjs.send(
+            EMAILJS_SERVICE_ID,
+            EMAILJS_TEMPLATE_ID,
+            templateParams,
+            EMAILJS_PUBLIC_KEY
+        );
+
+        console.log('Email sent successfully:', response);
+        return { success: true, response };
+    } catch (error) {
+        console.error('Failed to send email:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+// Send invitation emails to multiple recipients
+export const sendInvitationEmails = async (emails, shareLink, dashboardTitle, ownerEmail, permissions) => {
+    const results = [];
+    
+    for (const email of emails) {
+        const result = await sendInvitationEmail(email, shareLink, dashboardTitle, ownerEmail, permissions);
+        results.push({ email, ...result });
+    }
+    
+    return results;
 };
