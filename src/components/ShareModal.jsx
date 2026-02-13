@@ -9,7 +9,8 @@ import {
     copyShareLink,
     canAccessSharedDashboard,
     sendInvitationEmails,
-    getEmailConfigStatus
+    getEmailConfigStatus,
+    validateEmailJSTemplate
 } from '../services/sharingService';
 
 export default function ShareModal({ isOpen, onClose }) {
@@ -25,12 +26,20 @@ export default function ShareModal({ isOpen, onClose }) {
     const [emailStatus, setEmailStatus] = useState(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [emailConfigStatus, setEmailConfigStatus] = useState(null);
+    const [emailTemplateWarning, setEmailTemplateWarning] = useState(null);
 
     useEffect(() => {
         if (!user || !isOpen) return;
 
         // Check email configuration
-        setEmailConfigStatus(getEmailConfigStatus());
+        const config = getEmailConfigStatus();
+        setEmailConfigStatus(config);
+        
+        // Check template configuration
+        if (config.configured) {
+            const validation = validateEmailJSTemplate();
+            setEmailTemplateWarning(validation);
+        }
 
         const unsubscribe = subscribeToUserSharedDashboards(user.uid, (dashboards) => {
             setSharedDashboards(dashboards);
@@ -589,6 +598,23 @@ export default function ShareModal({ isOpen, onClose }) {
                                 }}>
                                     <span>⚠️</span>
                                     <span>Email service not configured. You'll need to copy the link and share it manually, or use the mailto links that will be provided.</span>
+                                </div>
+                            )}
+
+                            {/* EmailJS Template Configuration Warning */}
+                            {emailTemplateWarning && emailTemplateWarning.warning && (
+                                <div style={{
+                                    padding: '10px 12px',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    color: '#3b82f6',
+                                    marginTop: '10px'
+                                }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>📧 Important: Email Template Setup</div>
+                                    <div style={{ marginBottom: '4px' }}>{emailTemplateWarning.warning}</div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>{emailTemplateWarning.suggestion}</div>
                                 </div>
                             )}
 

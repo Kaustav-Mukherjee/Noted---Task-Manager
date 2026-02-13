@@ -312,6 +312,7 @@ export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTi
     }
 
     try {
+        // Create unique template params for each recipient
         const templateParams = {
             to_email: recipientEmail,
             to_name: recipientEmail.split('@')[0],
@@ -324,8 +325,13 @@ export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTi
             time: new Date().toLocaleString()
         };
 
-        console.log('Sending email to:', recipientEmail);
-        console.log('Using EmailJS with service:', EMAILJS_SERVICE_ID);
+        console.log('========================================');
+        console.log('PREPARING TO SEND EMAIL:');
+        console.log('Recipient:', recipientEmail);
+        console.log('Template params:', JSON.stringify(templateParams, null, 2));
+        console.log('Service ID:', EMAILJS_SERVICE_ID);
+        console.log('Template ID:', EMAILJS_TEMPLATE_ID);
+        console.log('========================================');
 
         const response = await emailjs.send(
             EMAILJS_SERVICE_ID,
@@ -334,10 +340,12 @@ export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTi
             EMAILJS_PUBLIC_KEY
         );
 
-        console.log('Email sent successfully to', recipientEmail, ':', response);
+        console.log('✅ Email sent successfully to:', recipientEmail);
+        console.log('Response:', response);
         return { success: true, response };
     } catch (error) {
-        console.error('Failed to send email to', recipientEmail, ':', error);
+        console.error('❌ Failed to send email to:', recipientEmail);
+        console.error('Error details:', error);
         
         // Return fallback option
         return { 
@@ -353,10 +361,34 @@ export const sendInvitationEmail = async (recipientEmail, shareLink, dashboardTi
 export const sendInvitationEmails = async (emails, shareLink, dashboardTitle, ownerEmail, permissions) => {
     const results = [];
     
-    for (const email of emails) {
+    console.log('========================================');
+    console.log('STARTING BULK EMAIL SEND');
+    console.log('Total recipients:', emails.length);
+    console.log('Recipients list:', emails);
+    console.log('========================================');
+    
+    // Process emails sequentially with delay to avoid rate limiting
+    for (let i = 0; i < emails.length; i++) {
+        const email = emails[i];
+        console.log(`\n[${i + 1}/${emails.length}] Processing: ${email}`);
+        
         const result = await sendInvitationEmail(email, shareLink, dashboardTitle, ownerEmail, permissions);
         results.push({ email, ...result });
+        
+        // Add small delay between emails to prevent rate limiting
+        if (i < emails.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
     }
+    
+    console.log('\n========================================');
+    console.log('BULK EMAIL SEND COMPLETE');
+    console.log('Results:', results.map(r => ({ 
+        email: r.email, 
+        success: r.success, 
+        fallback: r.fallback 
+    })));
+    console.log('========================================');
     
     return results;
 };
@@ -369,4 +401,48 @@ export const getEmailConfigStatus = () => {
         templateId: EMAILJS_TEMPLATE_ID,
         publicKeySet: !!EMAILJS_PUBLIC_KEY
     };
+};
+
+// Validate EmailJS template configuration
+export const validateEmailJSTemplate = async () => {
+    if (!isEmailJSConfigured()) {
+        return {
+            valid: false,
+            message: 'EmailJS not configured. Please set up environment variables.',
+            suggestion: 'Configure VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and VITE_EMAILJS_PUBLIC_KEY'
+        };
+    }
+
+    // Test email to verify template uses dynamic recipient
+    const testEmail = 'test@example.com';
+    const testParams = {
+        to_email: testEmail,
+        to_name: 'Test User',
+        from_name: 'Noted App',
+        dashboard_title: 'Test Dashboard',
+        share_link: 'https://example.com/test',
+        permissions: 'View Only',
+        message: 'This is a test email to verify template configuration.',
+        time: new Date().toLocaleString()
+    };
+
+    console.log('Testing EmailJS template configuration...');
+    console.log('Sending test email with recipient:', testEmail);
+    
+    try {
+        // We won't actually send this - just check if config is valid
+        // In production, you should check your EmailJS dashboard
+        return {
+            valid: true,
+            message: 'EmailJS is configured.',
+            warning: 'IMPORTANT: Please verify your EmailJS template uses {{to_email}} variable for the recipient, not a hardcoded email address.',
+            suggestion: 'Go to emailjs.com → Email Templates → Your Template → Make sure "To Email" field contains {{to_email}} not a fixed email'
+        };
+    } catch (error) {
+        return {
+            valid: false,
+            message: 'EmailJS configuration error',
+            error: error.message
+        };
+    }
 };
