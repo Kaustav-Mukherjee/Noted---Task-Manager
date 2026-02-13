@@ -401,38 +401,19 @@ export default function ShareModal({ isOpen, onClose }) {
                                                     </button>
                                                 </div>
 
-                                                {/* Permission Toggle */}
+                                                {/* Permission - View Only */}
                                                 <div style={{
                                                     display: 'flex',
-                                                    gap: '8px',
-                                                    fontSize: '0.8rem'
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    fontSize: '0.8rem',
+                                                    color: 'var(--text-muted)',
+                                                    padding: '8px 12px',
+                                                    backgroundColor: 'var(--bg-input)',
+                                                    borderRadius: '6px'
                                                 }}>
-                                                    <button
-                                                        onClick={() => handleUpdatePermissions(dashboard.id, 'view')}
-                                                        style={{
-                                                            flex: 1,
-                                                            padding: '8px',
-                                                            backgroundColor: dashboard.permissions === 'view' ? 'var(--text-main)' : 'var(--bg-input)',
-                                                            color: dashboard.permissions === 'view' ? 'var(--bg-app)' : 'var(--text-muted)',
-                                                            borderRadius: '6px',
-                                                            fontWeight: '600'
-                                                        }}
-                                                    >
-                                                        View Only
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleUpdatePermissions(dashboard.id, 'edit')}
-                                                        style={{
-                                                            flex: 1,
-                                                            padding: '8px',
-                                                            backgroundColor: dashboard.permissions === 'edit' ? 'var(--text-main)' : 'var(--bg-input)',
-                                                            color: dashboard.permissions === 'edit' ? 'var(--bg-app)' : 'var(--text-muted)',
-                                                            borderRadius: '6px',
-                                                            fontWeight: '600'
-                                                        }}
-                                                    >
-                                                        Can Edit
-                                                    </button>
+                                                    <Lock size={14} />
+                                                    <span>View Only</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -498,88 +479,30 @@ export default function ShareModal({ isOpen, onClose }) {
                                 />
                             </div>
 
-                            <div>
-                                <label style={{
-                                    display: 'block',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600',
-                                    marginBottom: '8px',
-                                    color: 'var(--text-muted)'
-                                }}>
-                                    Permissions
-                                </label>
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <label style={{
-                                        flex: 1,
-                                        padding: '16px',
-                                        backgroundColor: newDashboardPermissions === 'view' ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-hover)',
-                                        border: `2px solid ${newDashboardPermissions === 'view' ? '#3b82f6' : 'var(--border)'}`,
-                                        borderRadius: '12px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '8px'
+                            {/* Permission - Fixed to View Only */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                padding: '16px',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                border: '2px solid #3b82f6',
+                                borderRadius: '12px'
+                            }}>
+                                <Lock size={24} color="#3b82f6" />
+                                <div>
+                                    <div style={{
+                                        fontWeight: '600',
+                                        color: '#3b82f6'
                                     }}>
-                                        <input
-                                            type="radio"
-                                            name="permissions"
-                                            value="view"
-                                            checked={newDashboardPermissions === 'view'}
-                                            onChange={(e) => setNewDashboardPermissions(e.target.value)}
-                                            style={{ display: 'none' }}
-                                        />
-                                        <Lock size={24} color={newDashboardPermissions === 'view' ? '#3b82f6' : 'var(--text-muted)'} />
-                                        <span style={{
-                                            fontWeight: '600',
-                                            color: newDashboardPermissions === 'view' ? '#3b82f6' : 'var(--text-main)'
-                                        }}>
-                                            View Only
-                                        </span>
-                                        <span style={{
-                                            fontSize: '0.75rem',
-                                            color: 'var(--text-muted)',
-                                            textAlign: 'center'
-                                        }}>
-                                            Others can only view your dashboard
-                                        </span>
-                                    </label>
-
-                                    <label style={{
-                                        flex: 1,
-                                        padding: '16px',
-                                        backgroundColor: newDashboardPermissions === 'edit' ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-hover)',
-                                        border: `2px solid ${newDashboardPermissions === 'edit' ? '#3b82f6' : 'var(--border)'}`,
-                                        borderRadius: '12px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '8px'
+                                        View Only
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: 'var(--text-muted)'
                                     }}>
-                                        <input
-                                            type="radio"
-                                            name="permissions"
-                                            value="edit"
-                                            checked={newDashboardPermissions === 'edit'}
-                                            onChange={(e) => setNewDashboardPermissions(e.target.value)}
-                                            style={{ display: 'none' }}
-                                        />
-                                        <Unlock size={24} color={newDashboardPermissions === 'edit' ? '#3b82f6' : 'var(--text-muted)'} />
-                                        <span style={{
-                                            fontWeight: '600',
-                                            color: newDashboardPermissions === 'edit' ? '#3b82f6' : 'var(--text-main)'
-                                        }}>
-                                            Can Edit
-                                        </span>
-                                        <span style={{
-                                            fontSize: '0.75rem',
-                                            color: 'var(--text-muted)',
-                                            textAlign: 'center'
-                                        }}>
-                                            Others can add and edit tasks
-                                        </span>
-                                    </label>
+                                        Others can only view your dashboard
+                                    </div>
                                 </div>
                             </div>
 

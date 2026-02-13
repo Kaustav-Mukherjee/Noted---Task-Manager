@@ -547,16 +547,17 @@ export default function SharedDashboardView() {
             {/* Main Content */}
             <main style={{
                 flex: 1,
-                padding: '24px',
-                overflow: 'auto'
+                padding: '20px',
+                overflow: 'auto',
+                maxHeight: 'calc(100vh - 140px)'
             }}>
                 <div style={{
                     maxWidth: '1400px',
                     margin: '0 auto',
                     display: 'grid',
-                    gap: '20px',
+                    gap: '16px',
                     gridTemplateColumns: 'repeat(12, 1fr)',
-                    gridAutoRows: 'minmax(200px, auto)'
+                    gridAutoRows: 'minmax(180px, auto)'
                 }}>
                     {/* Streak Card */}
                     <div style={{
@@ -564,12 +565,13 @@ export default function SharedDashboardView() {
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        padding: '24px',
+                        padding: '20px',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '12px'
+                        gap: '8px',
+                        minHeight: '160px'
                     }}>
                         <div style={{
                             width: '60px',
@@ -597,10 +599,12 @@ export default function SharedDashboardView() {
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        padding: '24px',
+                        padding: '20px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px'
+                        gap: '12px',
+                        minHeight: '280px',
+                        maxHeight: '400px'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{
@@ -668,10 +672,11 @@ export default function SharedDashboardView() {
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        padding: '24px',
+                        padding: '20px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px'
+                        gap: '12px',
+                        minHeight: '200px'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{
@@ -730,7 +735,8 @@ export default function SharedDashboardView() {
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
                         overflow: 'hidden',
-                        minHeight: '400px'
+                        minHeight: '280px',
+                        maxHeight: '400px'
                     }}>
                         <SharedFocusTimerDisplay timerState={ownerTimerState} />
                     </div>
@@ -743,7 +749,8 @@ export default function SharedDashboardView() {
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
                         overflow: 'hidden',
-                        minHeight: '400px'
+                        minHeight: '280px',
+                        maxHeight: '400px'
                     }}>
                         <SharedNowPlaying nowPlaying={ownerNowPlaying} />
                     </div>
@@ -754,10 +761,11 @@ export default function SharedDashboardView() {
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        padding: '24px',
+                        padding: '20px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px'
+                        gap: '12px',
+                        minHeight: '200px'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{
@@ -856,11 +864,11 @@ export default function SharedDashboardView() {
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        padding: '24px',
+                        padding: '20px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px',
-                        maxHeight: '350px'
+                        gap: '12px',
+                        maxHeight: '280px'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <Calendar size={20} color="var(--text-muted)" />
