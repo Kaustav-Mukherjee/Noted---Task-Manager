@@ -102,8 +102,16 @@ function FocusModeIndicator({ timerState }) {
 
 // Now Playing Indicator
 function NowPlayingIndicator({ nowPlaying }) {
-    const hasMusic = nowPlaying?.videoId && nowPlaying?.title;
+    console.log('NowPlayingIndicator received:', nowPlaying);
+    
+    // Check if we have a videoId - that's the minimum requirement
+    const hasMusic = nowPlaying?.videoId && nowPlaying.videoId !== '';
     const youtubeUrl = hasMusic ? `https://www.youtube.com/watch?v=${nowPlaying.videoId}` : null;
+    
+    // Use title if available, otherwise show generic message
+    const title = nowPlaying?.title || 'Music playing';
+    
+    console.log('hasMusic:', hasMusic, 'youtubeUrl:', youtubeUrl, 'title:', title);
     
     if (!hasMusic) {
         return (
@@ -150,8 +158,8 @@ function NowPlayingIndicator({ nowPlaying }) {
             padding: '16px'
         }}>
             <div style={{
-                width: '52px',
-                height: '52px',
+                width: '56px',
+                height: '56px',
                 borderRadius: '50%',
                 backgroundColor: 'rgba(239, 68, 68, 0.15)',
                 display: 'flex',
@@ -159,11 +167,11 @@ function NowPlayingIndicator({ nowPlaying }) {
                 justifyContent: 'center',
                 animation: 'pulse 2s ease-in-out infinite'
             }}>
-                <Headphones size={26} color="#ef4444" />
+                <Headphones size={28} color="#ef4444" />
             </div>
             <div style={{ textAlign: 'center', width: '100%' }}>
                 <div style={{ 
-                    fontSize: '0.85rem', 
+                    fontSize: '0.9rem', 
                     fontWeight: '700', 
                     color: '#ef4444',
                     display: 'flex',
@@ -174,9 +182,9 @@ function NowPlayingIndicator({ nowPlaying }) {
                     <span>Owner is playing music now</span>
                 </div>
                 <div style={{ 
-                    fontSize: '0.75rem', 
+                    fontSize: '0.8rem', 
                     color: 'var(--text-main)', 
-                    marginTop: '6px',
+                    marginTop: '8px',
                     fontWeight: '500',
                     maxWidth: '100%',
                     overflow: 'hidden',
@@ -184,7 +192,7 @@ function NowPlayingIndicator({ nowPlaying }) {
                     whiteSpace: 'nowrap',
                     padding: '0 8px'
                 }}>
-                    {nowPlaying.title}
+                    {title}
                 </div>
                 <a 
                     href={youtubeUrl}
@@ -194,24 +202,26 @@ function NowPlayingIndicator({ nowPlaying }) {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
-                        marginTop: '10px',
-                        padding: '8px 14px',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        color: '#ef4444',
+                        marginTop: '12px',
+                        padding: '10px 16px',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
                         borderRadius: '20px',
-                        fontSize: '0.75rem',
+                        fontSize: '0.8rem',
                         fontWeight: '600',
                         textDecoration: 'none',
                         transition: 'all 0.2s',
-                        border: '1px solid rgba(239, 68, 68, 0.3)'
+                        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
                     }}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.backgroundColor = '#dc2626';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
                     }}
                     onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                        e.currentTarget.style.backgroundColor = '#ef4444';
                         e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
                     }}
                 >
                     <ExternalLink size={14} />

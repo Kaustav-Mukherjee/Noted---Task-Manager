@@ -12,7 +12,10 @@ function YouTubeNowPlaying() {
     // Save to Firestore when video changes
     useEffect(() => {
         if (user) {
-            saveUserNowPlaying(user.uid, { videoId });
+            saveUserNowPlaying(user.uid, { 
+                videoId,
+                title: 'YouTube Music'
+            });
         }
     }, [videoId, user]);
 
