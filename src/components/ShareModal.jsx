@@ -132,7 +132,12 @@ export default function ShareModal({ isOpen, onClose }) {
             setAllowedEmails('');
         } catch (error) {
             console.error('Error creating shared dashboard:', error);
-            alert('Failed to create shared dashboard: ' + error.message);
+            console.error('Error details:', {
+                code: error.code,
+                message: error.message,
+                stack: error.stack
+            });
+            alert('Failed to create shared dashboard: ' + error.message + '\n\nPlease check the browser console for more details.');
         } finally {
             setLoading(false);
         }

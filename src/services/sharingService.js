@@ -49,25 +49,46 @@ export const generateShareId = () => {
 
 // Create a shared dashboard
 export const createSharedDashboard = async (ownerId, dashboardData) => {
-    const shareId = generateShareId();
-    const shareLink = `${window.location.origin}/dashboard/${shareId}`;
+    console.log('Starting createSharedDashboard with ownerId:', ownerId);
+    console.log('Dashboard data:', dashboardData);
     
-    const sharedDashboardData = {
-        shareId,
-        ownerId,
-        shareLink,
-        title: dashboardData.title || 'Shared Dashboard',
-        description: dashboardData.description || '',
-        permissions: dashboardData.permissions || 'view',
-        allowedEmails: dashboardData.allowedEmails || [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        isActive: true,
-        collaborators: []
-    };
-    
-    const docRef = await addDoc(sharedDashboardsCollection(), sharedDashboardData);
-    return { id: docRef.id, ...sharedDashboardData, shareLink };
+    try {
+        const shareId = generateShareId();
+        console.log('Generated shareId:', shareId);
+        
+        const shareLink = `${window.location.origin}/dashboard/${shareId}`;
+        console.log('Generated shareLink:', shareLink);
+        
+        const sharedDashboardData = {
+            shareId,
+            ownerId,
+            shareLink,
+            title: dashboardData.title || 'Shared Dashboard',
+            description: dashboardData.description || '',
+            permissions: dashboardData.permissions || 'view',
+            allowedEmails: dashboardData.allowedEmails || [],
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isActive: true,
+            collaborators: []
+        };
+        
+        console.log('Prepared dashboard data for Firestore:', sharedDashboardData);
+        console.log('Firestore collection:', sharedDashboardsCollection());
+        
+        const docRef = await addDoc(sharedDashboardsCollection(), sharedDashboardData);
+        console.log('Document created with ID:', docRef.id);
+        
+        const result = { id: docRef.id, ...sharedDashboardData, shareLink };
+        console.log('Returning result:', result);
+        
+        return result;
+    } catch (error) {
+        console.error('Error in createSharedDashboard:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        throw error;
+    }
 };
 
 // Get shared dashboard by shareId
