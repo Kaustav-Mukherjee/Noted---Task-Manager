@@ -617,8 +617,68 @@ function HabitTracker({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     return (
-        <AnimatePresence>
-            <motion.div
+        <>
+            <style>{`
+                @media (max-width: 768px) {
+                    .habit-tracker-modal {
+                        max-width: 100% !important;
+                        max-height: 100vh !important;
+                        border-radius: 0 !important;
+                    }
+                    .habit-tracker-header {
+                        flex-direction: column !important;
+                        gap: 16px !important;
+                        padding: 20px !important;
+                    }
+                    .habit-tracker-header-actions {
+                        width: 100% !important;
+                        justify-content: space-between !important;
+                    }
+                    .habit-tracker-content {
+                        padding: 16px !important;
+                    }
+                    .habit-card-header {
+                        flex-direction: column !important;
+                        gap: 16px !important;
+                    }
+                    .habit-card-actions {
+                        width: 100% !important;
+                        justify-content: flex-end !important;
+                    }
+                    .weekly-progress {
+                        overflow-x: auto !important;
+                        padding-bottom: 8px !important;
+                    }
+                    .stats-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    .overview-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
+                @media (max-width: 480px) {
+                    .habit-tracker-header-actions {
+                        flex-wrap: wrap !important;
+                        gap: 8px !important;
+                    }
+                    .view-toggle {
+                        order: 3 !important;
+                        width: 100% !important;
+                        margin-top: 8px !important;
+                    }
+                    .view-toggle > button {
+                        flex: 1 !important;
+                    }
+                    .weekly-progress {
+                        gap: 8px !important;
+                    }
+                    .day-button {
+                        min-width: 44px !important;
+                    }
+                }
+            `}</style>
+            <AnimatePresence>
+                <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -641,6 +701,7 @@ function HabitTracker({ isOpen, onClose }) {
                     initial="hidden"
                     animate="visible"
                     exit="exit"
+                    className="habit-tracker-modal"
                     style={{
                         backgroundColor: 'var(--bg-card)',
                         borderRadius: '28px',
@@ -656,6 +717,7 @@ function HabitTracker({ isOpen, onClose }) {
                 >
                     {/* Header */}
                     <motion.div
+                        className="habit-tracker-header"
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1, type: "spring", stiffness: 400 }}
@@ -712,6 +774,7 @@ function HabitTracker({ isOpen, onClose }) {
                         </motion.div>
                         
                         <motion.div 
+                            className="habit-tracker-header-actions"
                             style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -719,6 +782,7 @@ function HabitTracker({ isOpen, onClose }) {
                         >
                             {/* View Toggle */}
                             <motion.div
+                                className="view-toggle"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.25 }}
@@ -805,7 +869,11 @@ function HabitTracker({ isOpen, onClose }) {
                                     border: '1px solid var(--border)',
                                     color: 'var(--text-muted)',
                                     cursor: 'pointer',
-                                    borderRadius: '12px'
+                                    borderRadius: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
                                 }}
                             >
                                 <X size={22} />
@@ -815,6 +883,7 @@ function HabitTracker({ isOpen, onClose }) {
 
                     {/* Content */}
                     <motion.div
+                        className="habit-tracker-content"
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
@@ -937,7 +1006,7 @@ function HabitTracker({ isOpen, onClose }) {
                                                     />
                                                     
                                                     {/* Habit Header */}
-                                                    <div style={{
+                                                    <div className="habit-card-header" style={{
                                                         display: 'flex',
                                                         justifyContent: 'space-between',
                                                         alignItems: 'flex-start',
@@ -999,7 +1068,8 @@ function HabitTracker({ isOpen, onClose }) {
                                                             </div>
                                                         </motion.div>
                                                         
-                                                        <motion.div 
+                                                        <motion.div
+                                                            className="habit-card-actions"
                                                             style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
                                                             initial={{ opacity: 0, x: 20 }}
                                                             animate={{ opacity: 1, x: 0 }}
@@ -1008,7 +1078,7 @@ function HabitTracker({ isOpen, onClose }) {
                                                             <motion.div
                                                                 initial={{ scale: 0 }}
                                                                 animate={{ scale: 1 }}
-                                                                transition={{ 
+                                                                transition={{
                                                                     delay: index * 0.05 + 0.2,
                                                                     type: "spring",
                                                                     stiffness: 400
@@ -1081,6 +1151,7 @@ function HabitTracker({ isOpen, onClose }) {
 
                                                     {/* Weekly Progress */}
                                                     <motion.div
+                                                        className="weekly-progress"
                                                         initial={{ opacity: 0, y: 20 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         transition={{ delay: index * 0.05 + 0.2 }}
@@ -1090,7 +1161,8 @@ function HabitTracker({ isOpen, onClose }) {
                                                             alignItems: 'center',
                                                             backgroundColor: 'var(--bg-card)',
                                                             borderRadius: '16px',
-                                                            padding: '16px 20px'
+                                                            padding: '16px 20px',
+                                                            gap: '12px'
                                                         }}
                                                     >
                                                         {last7Days.map((day, dayIndex) => {
@@ -1102,6 +1174,7 @@ function HabitTracker({ isOpen, onClose }) {
                                                             return (
                                                                 <motion.button
                                                                     key={dayIndex}
+                                                                    className="day-button"
                                                                     variants={buttonVariants}
                                                                     initial="initial"
                                                                     whileHover="hover"
@@ -1272,6 +1345,7 @@ function HabitTracker({ isOpen, onClose }) {
                 </AnimatePresence>
             </motion.div>
         </AnimatePresence>
+        </>
     );
 }
 
@@ -1373,7 +1447,7 @@ function StatsView({
                 </motion.div>
 
                 {/* Charts Grid */}
-                <div style={{
+                <div className="stats-grid" style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
                     gap: '24px'
@@ -1711,6 +1785,7 @@ function StatsView({
                 All Habits Overview
             </motion.h3>
             <motion.div
+                className="overview-grid"
                 variants={containerVariants}
                 style={{
                     display: 'grid',
