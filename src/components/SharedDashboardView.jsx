@@ -14,34 +14,39 @@ const parseSafeDate = (dateVal) => {
     return isNaN(d.getTime()) ? null : d;
 };
 
-// Simple Focus Timer for Shared View
-function SharedFocusTimer({ onTimerComplete }) {
-    const [timeLeft, setTimeLeft] = useState(25 * 60);
-    const [isActive, setIsActive] = useState(false);
+// Display Owner's Focus Timer for Shared View (Read-only)
+function SharedFocusTimerDisplay({ timerState }) {
+    const [displayTime, setDisplayTime] = useState(25 * 60);
     const [mode, setMode] = useState('focus');
+    const [isActive, setIsActive] = useState(false);
 
+    // Sync with owner's timer state
+    useEffect(() => {
+        if (timerState) {
+            setMode(timerState.mode || 'focus');
+            setIsActive(timerState.isActive || false);
+            
+            // Calculate current time left based on saved state
+            if (timerState.isActive && timerState.startTime && timerState.timeLeft) {
+                const elapsedSinceStart = Math.floor((Date.now() - timerState.startTime) / 1000);
+                const newTimeLeft = Math.max(0, timerState.timeLeft - elapsedSinceStart);
+                setDisplayTime(newTimeLeft);
+            } else {
+                setDisplayTime(timerState.timeLeft || 25 * 60);
+            }
+        }
+    }, [timerState]);
+
+    // Update display time every second if timer is active
     useEffect(() => {
         let interval = null;
-        if (isActive && timeLeft > 0) {
+        if (isActive && displayTime > 0) {
             interval = setInterval(() => {
-                setTimeLeft(time => {
-                    if (time <= 1) {
-                        setIsActive(false);
-                        onTimerComplete && onTimerComplete(25/60);
-                        return 25 * 60;
-                    }
-                    return time - 1;
-                });
+                setDisplayTime(time => Math.max(0, time - 1));
             }, 1000);
         }
         return () => clearInterval(interval);
-    }, [isActive, timeLeft, onTimerComplete]);
-
-    const toggleTimer = () => setIsActive(!isActive);
-    const resetTimer = () => {
-        setIsActive(false);
-        setTimeLeft(mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60);
-    };
+    }, [isActive, displayTime]);
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
@@ -49,7 +54,10 @@ function SharedFocusTimer({ onTimerComplete }) {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const progress = ((mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60) - timeLeft) / (mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60) * 100;
+    const totalTime = mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60;
+    const progress = ((totalTime - displayTime) / totalTime) * 100;
+    const modeLabel = mode === 'focus' ? 'Focus' : mode === 'short' ? 'Short Break' : 'Long Break';
+    const modeColor = mode === 'focus' ? '#8b5cf6' : '#22c55e';
 
     return (
         <div style={{
@@ -59,11 +67,25 @@ function SharedFocusTimer({ onTimerComplete }) {
             padding: '24px',
             gap: '20px'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Zap size={16} color="#8b5cf6" />
-                <h3 style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    Focus Session
-                </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Zap size={16} color={modeColor} />
+                    <h3 style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        Owner's Focus Timer
+                    </h3>
+                </div>
+                {isActive && (
+                    <div style={{
+                        padding: '4px 8px',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        color: '#22c55e',
+                        fontWeight: '600'
+                    }}>
+                        Running
+                    </div>
+                )}
             </div>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
@@ -76,7 +98,7 @@ function SharedFocusTimer({ onTimerComplete }) {
                             cy="90" 
                             r="80" 
                             fill="none" 
-                            stroke="#8b5cf6" 
+                            stroke={modeColor}
                             strokeWidth="8"
                             strokeLinecap="round"
                             strokeDasharray={`${2 * Math.PI * 80}`}
@@ -93,105 +115,26 @@ function SharedFocusTimer({ onTimerComplete }) {
                         textAlign: 'center'
                     }}>
                         <div style={{ fontSize: '2.5rem', fontWeight: '300', color: 'var(--text-main)' }}>
-                            {formatTime(timeLeft)}
+                            {formatTime(displayTime)}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                            {mode === 'focus' ? 'Focus' : mode === 'short' ? 'Short Break' : 'Long Break'}
+                            {modeLabel}
                         </div>
                     </div>
                 </div>
 
-                {/* Controls */}
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <button
-                        onClick={toggleTimer}
-                        style={{
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '50%',
-                            backgroundColor: '#8b5cf6',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: 'none',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        {isActive ? <Pause size={24} color="white" /> : <Play size={24} color="white" />}
-                    </button>
-                    <button
-                        onClick={resetTimer}
-                        style={{
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '50%',
-                            backgroundColor: 'var(--bg-hover)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1px solid var(--border)',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <RotateCcw size={24} color="var(--text-muted)" />
-                    </button>
-                </div>
-
-                {/* Mode Selector */}
-                <div style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--bg-hover)', padding: '4px', borderRadius: '10px' }}>
-                    {['focus', 'short', 'long'].map((m) => (
-                        <button
-                            key={m}
-                            onClick={() => {
-                                setMode(m);
-                                setTimeLeft(m === 'focus' ? 25 * 60 : m === 'short' ? 5 * 60 : 15 * 60);
-                                setIsActive(false);
-                            }}
-                            style={{
-                                padding: '8px 16px',
-                                borderRadius: '8px',
-                                fontSize: '0.75rem',
-                                fontWeight: '600',
-                                backgroundColor: mode === m ? 'var(--bg-card)' : 'transparent',
-                                color: mode === m ? 'var(--text-main)' : 'var(--text-muted)',
-                                border: 'none',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            {m === 'focus' ? 'Focus' : m === 'short' ? 'Short' : 'Long'}
-                        </button>
-                    ))}
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    View-only: This shows the dashboard owner's current timer
                 </div>
             </div>
         </div>
     );
 }
 
-// Simple Now Playing for Shared View
-function SharedNowPlaying() {
-    const [videoId, setVideoId] = useState('jfKfPfyJRdk');
-    const [tempUrl, setTempUrl] = useState('');
-    const [showInput, setShowInput] = useState(false);
-
-    const extractVideoId = (url) => {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
-    };
-
-    const handleUpdateVideo = (e) => {
-        e.preventDefault();
-        const id = extractVideoId(tempUrl);
-        if (id) {
-            setVideoId(id);
-            setShowInput(false);
-            setTempUrl('');
-        } else if (tempUrl.length === 11) {
-            setVideoId(tempUrl);
-            setShowInput(false);
-            setTempUrl('');
-        }
-    };
+// Display Owner's Now Playing for Shared View (Read-only)
+function SharedNowPlaying({ nowPlaying }) {
+    const videoId = nowPlaying?.videoId || 'jfKfPfyJRdk';
+    const videoTitle = nowPlaying?.title || '';
 
     return (
         <div style={{
@@ -204,56 +147,20 @@ function SharedNowPlaying() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Youtube size={20} color="#ff0000" />
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Now Playing</h3>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '600' }}>Owner's Now Playing</h3>
                 </div>
-                <button
-                    onClick={() => setShowInput(!showInput)}
-                    style={{
-                        padding: '8px',
-                        borderRadius: '8px',
-                        backgroundColor: showInput ? 'var(--text-main)' : 'var(--bg-hover)',
-                        color: showInput ? 'var(--bg-app)' : 'var(--text-muted)',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}
-                >
-                    {showInput ? '✕' : '🔗'}
-                </button>
             </div>
 
-            {showInput && (
-                <form onSubmit={handleUpdateVideo} style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                        type="text"
-                        placeholder="YouTube URL or ID"
-                        value={tempUrl}
-                        onChange={(e) => setTempUrl(e.target.value)}
-                        style={{
-                            flex: 1,
-                            padding: '10px',
-                            backgroundColor: 'var(--bg-hover)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            color: 'var(--text-main)'
-                        }}
-                    />
-                    <button 
-                        type="submit"
-                        style={{
-                            padding: '10px 16px',
-                            backgroundColor: 'var(--text-main)',
-                            color: 'var(--bg-app)',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            border: 'none',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Set
-                    </button>
-                </form>
+            {videoTitle && (
+                <div style={{ 
+                    fontSize: '0.8rem', 
+                    color: 'var(--text-muted)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                }}>
+                    {videoTitle}
+                </div>
             )}
 
             <div style={{
@@ -273,6 +180,10 @@ function SharedNowPlaying() {
                     allowFullScreen
                     style={{ border: 'none' }}
                 />
+            </div>
+            
+            <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                This shows what the dashboard owner is currently listening to
             </div>
         </div>
     );
@@ -301,6 +212,8 @@ export default function SharedDashboardView() {
     const [studySessions, setStudySessions] = useState([]);
     const [goals, setGoals] = useState({});
     const [streak, setStreak] = useState(0);
+    const [ownerTimerState, setOwnerTimerState] = useState(null);
+    const [ownerNowPlaying, setOwnerNowPlaying] = useState(null);
 
     // Load shared dashboard
     useEffect(() => {
@@ -346,41 +259,27 @@ export default function SharedDashboardView() {
             setGoals(data || {});
         });
 
+        const unsubStats = firestoreService.subscribeSharedUserStats(ownerId, (data) => {
+            setStreak(data?.streak || 0);
+        });
+
+        const unsubTimer = firestoreService.subscribeSharedTimerState(ownerId, (data) => {
+            setOwnerTimerState(data);
+        });
+
+        const unsubNowPlaying = firestoreService.subscribeSharedNowPlaying(ownerId, (data) => {
+            setOwnerNowPlaying(data);
+        });
+
         return () => {
             unsubTasks();
             unsubStudy();
             unsubGoals();
+            unsubStats();
+            unsubTimer();
+            unsubNowPlaying();
         };
     }, [isSharedMode, sharedDashboardOwnerId, canAccessShared]);
-
-    // Calculate streak
-    useEffect(() => {
-        if (tasks.length === 0) {
-            setStreak(0);
-            return;
-        }
-
-        const today = new Date();
-        let currentStreak = 0;
-        
-        for (let i = 0; i < 365; i++) {
-            const checkDate = subDays(today, i);
-            const dayTasks = tasks.filter(t => {
-                const taskDate = parseSafeDate(t.date);
-                return taskDate && isSameDay(taskDate, checkDate);
-            });
-            
-            if (dayTasks.length > 0 && dayTasks.every(t => t.completed)) {
-                currentStreak++;
-            } else if (i === 0 && dayTasks.length === 0) {
-                continue;
-            } else {
-                break;
-            }
-        }
-        
-        setStreak(currentStreak);
-    }, [tasks]);
 
     // Stats
     const stats = useMemo(() => {
@@ -785,7 +684,7 @@ export default function SharedDashboardView() {
                         </div>
                     </div>
 
-                    {/* Focus Timer - Using simplified version */}
+                    {/* Focus Timer - Shows Owner's Timer */}
                     <div style={{
                         gridColumn: 'span 4',
                         gridRow: 'span 2',
@@ -795,10 +694,10 @@ export default function SharedDashboardView() {
                         overflow: 'hidden',
                         minHeight: '400px'
                     }}>
-                        <SharedFocusTimer onTimerComplete={handleTimerComplete} />
+                        <SharedFocusTimerDisplay timerState={ownerTimerState} />
                     </div>
 
-                    {/* Now Playing - Using simplified version */}
+                    {/* Now Playing - Shows Owner's Music */}
                     <div style={{
                         gridColumn: 'span 5',
                         gridRow: 'span 2',
@@ -808,7 +707,7 @@ export default function SharedDashboardView() {
                         overflow: 'hidden',
                         minHeight: '400px'
                     }}>
-                        <SharedNowPlaying />
+                        <SharedNowPlaying nowPlaying={ownerNowPlaying} />
                     </div>
 
                     {/* Daily Goals */}

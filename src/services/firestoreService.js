@@ -137,6 +137,54 @@ export const subscribeSharedGoals = (ownerId, callback) => {
     });
 };
 
+// Get user preferences from a specific user (for shared dashboard access)
+export const subscribeSharedUserPreferences = (ownerId, callback) => {
+    const prefRef = doc(db, 'users', ownerId, 'preferences', 'main');
+    return onSnapshot(prefRef, (snapshot) => {
+        if (snapshot.exists()) {
+            callback(snapshot.data());
+        } else {
+            callback({});
+        }
+    });
+};
+
+// Get user stats/streak from a specific user (for shared dashboard access)
+export const subscribeSharedUserStats = (ownerId, callback) => {
+    const statsRef = doc(db, 'users', ownerId, 'stats', 'main');
+    return onSnapshot(statsRef, (snapshot) => {
+        if (snapshot.exists()) {
+            callback(snapshot.data());
+        } else {
+            callback({ streak: 0 });
+        }
+    });
+};
+
+// Get timer state from a specific user (for shared dashboard access)
+export const subscribeSharedTimerState = (ownerId, callback) => {
+    const timerRef = doc(db, 'users', ownerId, 'timer', 'state');
+    return onSnapshot(timerRef, (snapshot) => {
+        if (snapshot.exists()) {
+            callback(snapshot.data());
+        } else {
+            callback(null);
+        }
+    });
+};
+
+// Get now playing from a specific user (for shared dashboard access)
+export const subscribeSharedNowPlaying = (ownerId, callback) => {
+    const nowPlayingRef = doc(db, 'users', ownerId, 'nowPlaying', 'current');
+    return onSnapshot(nowPlayingRef, (snapshot) => {
+        if (snapshot.exists()) {
+            callback(snapshot.data());
+        } else {
+            callback({ videoId: 'jfKfPfyJRdk' }); // Default lofi
+        }
+    });
+};
+
 // Add task to shared dashboard (with ownerId)
 export const addSharedTask = async (ownerId, taskData) => {
     const docRef = await addDoc(collection(db, 'users', ownerId, 'tasks'), {
