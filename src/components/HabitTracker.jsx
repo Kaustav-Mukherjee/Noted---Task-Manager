@@ -754,6 +754,33 @@ function HabitTracker({ isOpen, onClose }) {
                     .overview-grid {
                         grid-template-columns: 1fr !important;
                     }
+                    /* Quantitative section responsive */
+                    .quantitative-weekly-row {
+                        flex-wrap: nowrap !important;
+                        overflow-x: auto !important;
+                        gap: 6px !important;
+                        padding: 8px 4px !important;
+                        -webkit-overflow-scrolling: touch;
+                    }
+                    .quantitative-day-item {
+                        flex: 0 0 auto !important;
+                        min-width: 60px !important;
+                    }
+                    .quantitative-stepper {
+                        gap: 2px !important;
+                    }
+                    .quantitative-stepper button {
+                        width: 20px !important;
+                        height: 20px !important;
+                        font-size: 0.8rem !important;
+                    }
+                    .quantitative-value-box {
+                        width: 32px !important;
+                        height: 32px !important;
+                    }
+                    .quantitative-value-box span {
+                        font-size: 0.8rem !important;
+                    }
                 }
                 @media (max-width: 480px) {
                     .habit-tracker-header-actions {
@@ -773,6 +800,41 @@ function HabitTracker({ isOpen, onClose }) {
                     }
                     .day-button {
                         min-width: 44px !important;
+                    }
+                    /* Quantitative section mobile */
+                    .quantitative-day-item {
+                        min-width: 54px !important;
+                    }
+                    .quantitative-day-item span {
+                        font-size: 0.65rem !important;
+                    }
+                    .quantitative-stepper {
+                        gap: 1px !important;
+                    }
+                    .quantitative-stepper button {
+                        width: 18px !important;
+                        height: 18px !important;
+                        font-size: 0.75rem !important;
+                    }
+                    .quantitative-value-box {
+                        width: 28px !important;
+                        height: 28px !important;
+                    }
+                    .quantitative-value-box span {
+                        font-size: 0.75rem !important;
+                    }
+                }
+                @media (max-width: 360px) {
+                    .quantitative-day-item {
+                        min-width: 48px !important;
+                    }
+                    .quantitative-stepper button {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                    .quantitative-value-box {
+                        width: 26px !important;
+                        height: 26px !important;
                     }
                 }
             `}</style>
@@ -1362,11 +1424,14 @@ function HabitTracker({ isOpen, onClose }) {
                                                                 <span>Target: {habit.target || 1} {habit.unit || 'times'}</span>
                                                                 <span>Last 7 days</span>
                                                             </div>
-                                                            <div style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                gap: '8px'
-                                                            }}>
+                                                            <div 
+                                                                className="quantitative-weekly-row"
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    gap: '8px'
+                                                                }}
+                                                            >
                                                                 {last7Days.map((day, dayIndex) => {
                                                                     const dateStr = format(day, 'yyyy-MM-dd');
                                                                     const currentValue = getHabitValue(habit.id, dateStr);
@@ -1388,6 +1453,7 @@ function HabitTracker({ isOpen, onClose }) {
                                                                     return (
                                                                         <div
                                                                             key={dayIndex}
+                                                                            className="quantitative-day-item"
                                                                             style={{
                                                                                 display: 'flex',
                                                                                 flexDirection: 'column',
@@ -1403,11 +1469,14 @@ function HabitTracker({ isOpen, onClose }) {
                                                                             }}>
                                                                                 {dayLabel}
                                                                             </span>
-                                                                            <div style={{
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                gap: '4px'
-                                                                            }}>
+                                                                            <div 
+                                                                                className="quantitative-stepper"
+                                                                                style={{
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '4px'
+                                                                                }}
+                                                                            >
                                                                                 {/* Decrement Button */}
                                                                                 <motion.button
                                                                                     type="button"
@@ -1435,6 +1504,7 @@ function HabitTracker({ isOpen, onClose }) {
                                                                                 
                                                                                 {/* Value Display Box */}
                                                                                 <motion.div 
+                                                                                    className="quantitative-value-box"
                                                                                     whileHover={{ scale: 1.02 }}
                                                                                     style={{
                                                                                         position: 'relative',
