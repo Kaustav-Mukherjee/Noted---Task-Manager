@@ -2181,16 +2181,21 @@ function HabitModal({
                     borderRadius: '28px',
                     width: '100%',
                     maxWidth: '480px',
-                    padding: '32px',
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
                     boxShadow: '0 50px 100px -20px rgba(0, 0, 0, 0.5)',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    overflow: 'hidden'
                 }}
             >
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '28px'
+                    padding: '28px 28px 20px 28px',
+                    borderBottom: '1px solid var(--border)',
+                    flexShrink: 0
                 }}>
                     <motion.h3
                         initial={{ opacity: 0, x: -20 }}
@@ -2220,7 +2225,20 @@ function HabitModal({
                     </motion.button>
                 </div>
 
-                <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <form onSubmit={onSave} style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    flex: 1,
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '18px',
+                        padding: '20px 28px',
+                        overflowY: 'auto',
+                        flex: 1
+                    }}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -2274,7 +2292,14 @@ function HabitModal({
                         }}>
                             Habit Type
                         </label>
-                        <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{ 
+                            display: 'flex', 
+                            gap: '8px',
+                            padding: '4px',
+                            backgroundColor: 'var(--bg-input)',
+                            borderRadius: '12px',
+                            border: '2px solid var(--border)'
+                        }}>
                             <motion.button
                                 type="button"
                                 whileHover={{ scale: 1.02 }}
@@ -2282,24 +2307,23 @@ function HabitModal({
                                 onClick={() => setHabitType('binary')}
                                 style={{
                                     flex: 1,
-                                    padding: '14px 20px',
-                                    backgroundColor: habitType === 'binary' ? habitColor : 'var(--bg-input)',
-                                    border: `2px solid ${habitType === 'binary' ? habitColor : 'var(--border)'}`,
-                                    borderRadius: '14px',
-                                    color: habitType === 'binary' ? 'white' : 'var(--text-main)',
+                                    padding: '10px 12px',
+                                    backgroundColor: habitType === 'binary' ? habitColor : 'transparent',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: habitType === 'binary' ? 'white' : 'var(--text-muted)',
                                     fontWeight: '600',
-                                    fontSize: '0.95rem',
+                                    fontSize: '0.85rem',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px'
                                 }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                    <CheckCircle2 size={18} />
-                                    <span>Binary</span>
-                                </div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px', fontWeight: '400' }}>
-                                    Done / Not Done
-                                </div>
+                                <CheckCircle2 size={16} />
+                                <span>Binary</span>
                             </motion.button>
                             <motion.button
                                 type="button"
@@ -2308,25 +2332,32 @@ function HabitModal({
                                 onClick={() => setHabitType('quantitative')}
                                 style={{
                                     flex: 1,
-                                    padding: '14px 20px',
-                                    backgroundColor: habitType === 'quantitative' ? habitColor : 'var(--bg-input)',
-                                    border: `2px solid ${habitType === 'quantitative' ? habitColor : 'var(--border)'}`,
-                                    borderRadius: '14px',
-                                    color: habitType === 'quantitative' ? 'white' : 'var(--text-main)',
+                                    padding: '10px 12px',
+                                    backgroundColor: habitType === 'quantitative' ? habitColor : 'transparent',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: habitType === 'quantitative' ? 'white' : 'var(--text-muted)',
                                     fontWeight: '600',
-                                    fontSize: '0.95rem',
+                                    fontSize: '0.85rem',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px'
                                 }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                    <Target size={18} />
-                                    <span>Quantitative</span>
-                                </div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px', fontWeight: '400' }}>
-                                    Track a number
-                                </div>
+                                <Target size={16} />
+                                <span>Numeric</span>
                             </motion.button>
+                        </div>
+                        <div style={{ 
+                            fontSize: '0.75rem', 
+                            color: 'var(--text-muted)', 
+                            marginTop: '6px',
+                            paddingLeft: '4px'
+                        }}>
+                            {habitType === 'binary' ? 'Simple done/not done tracking' : 'Track a numeric value like glasses, minutes, pages'}
                         </div>
                     </motion.div>
 
@@ -2519,12 +2550,16 @@ function HabitModal({
                         </motion.div>
                     )}
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        style={{ display: 'flex', gap: '14px', marginTop: '8px' }}
-                    >
+                    </div>
+
+                    <div style={{
+                        display: 'flex', 
+                        gap: '12px', 
+                        padding: '20px 28px',
+                        borderTop: '1px solid var(--border)',
+                        backgroundColor: 'var(--bg-card)',
+                        flexShrink: 0
+                    }}>
                         <motion.button
                             type="button"
                             variants={buttonVariants}
@@ -2534,13 +2569,13 @@ function HabitModal({
                             onClick={onClose}
                             style={{
                                 flex: 1,
-                                padding: '18px',
+                                padding: '14px 18px',
                                 backgroundColor: 'var(--bg-input)',
                                 border: '2px solid var(--border)',
-                                borderRadius: '16px',
+                                borderRadius: '14px',
                                 color: 'var(--text-main)',
                                 fontWeight: '700',
-                                fontSize: '1rem',
+                                fontSize: '0.95rem',
                                 cursor: 'pointer'
                             }}
                         >
@@ -2554,20 +2589,20 @@ function HabitModal({
                             whileTap="tap"
                             style={{
                                 flex: 1,
-                                padding: '18px',
+                                padding: '14px 18px',
                                 background: 'linear-gradient(135deg, #007AFF 0%, #5856D6 100%)',
                                 border: 'none',
-                                borderRadius: '16px',
+                                borderRadius: '14px',
                                 color: 'white',
                                 fontWeight: '700',
-                                fontSize: '1rem',
+                                fontSize: '0.95rem',
                                 cursor: 'pointer',
                                 boxShadow: '0 8px 24px rgba(0,122,255,0.4)'
                             }}
                         >
                             {editingHabit ? 'Save Changes' : 'Create Habit'}
                         </motion.button>
-                    </motion.div>
+                    </div>
                 </form>
             </motion.div>
         </motion.div>
