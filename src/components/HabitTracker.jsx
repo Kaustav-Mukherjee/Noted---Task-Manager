@@ -554,11 +554,21 @@ function HabitTracker({ isOpen, onClose }) {
 
         const completedCount = completionData.filter(d => d.completed === 1).length;
         const missedCount = completionData.length - completedCount;
+        const partialCount = isQuantitative 
+            ? completionData.filter(d => d.value > 0 && d.value < targetValue).length 
+            : 0;
 
-        const pieData = [
-            { name: 'Completed', value: completedCount, color: '#34C759' },
-            { name: 'Missed', value: missedCount, color: '#FF3B30' }
-        ];
+        // For quantitative habits, show 3 categories; for binary, show 2
+        const pieData = isQuantitative 
+            ? [
+                { name: 'Target Met', value: completedCount, color: '#34C759' },
+                { name: 'Partial', value: partialCount, color: '#FF9500' },
+                { name: 'Missed', value: completionData.filter(d => d.value === 0).length, color: '#FF3B30' }
+              ].filter(d => d.value > 0) // Only show categories with values
+            : [
+                { name: 'Completed', value: completedCount, color: '#34C759' },
+                { name: 'Missed', value: missedCount, color: '#FF3B30' }
+            ];
 
         // Calculate average value for quantitative habits
         let averageValue = 0;
@@ -1383,15 +1393,20 @@ function HabitTracker({ isOpen, onClose }) {
                                                                             }}>
                                                                                 {dayLabel}
                                                                             </span>
-                                                                            <div style={{
-                                                                                position: 'relative',
-                                                                                width: '44px',
-                                                                                height: '44px',
-                                                                                borderRadius: '12px',
-                                                                                backgroundColor: 'var(--bg-input)',
-                                                                                overflow: 'hidden',
-                                                                                border: `2px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
-                                                                            }}>
+                                                                            <motion.div 
+                                                                                whileHover={{ scale: 1.05 }}
+                                                                                whileTap={{ scale: 0.95 }}
+                                                                                style={{
+                                                                                    position: 'relative',
+                                                                                    width: '44px',
+                                                                                    height: '44px',
+                                                                                    borderRadius: '12px',
+                                                                                    backgroundColor: 'var(--bg-input)',
+                                                                                    overflow: 'hidden',
+                                                                                    border: `2px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
+                                                                                    cursor: 'pointer'
+                                                                                }}
+                                                                            >
                                                                                 {/* Progress fill */}
                                                                                 <motion.div
                                                                                     initial={{ height: 0 }}
@@ -1406,44 +1421,30 @@ function HabitTracker({ isOpen, onClose }) {
                                                                                         opacity: 0.3
                                                                                     }}
                                                                                 />
-                                                                                {/* Input field for today only, display value for other days */}
-                                                                                {isToday ? (
-                                                                                    <input
-                                                                                        type="number"
-                                                                                        min="0"
-                                                                                        value={currentValue || ''}
-                                                                                        onChange={(e) => handleUpdateQuantitativeValue(habit.id, dateStr, e.target.value)}
-                                                                                        placeholder="0"
-                                                                                        style={{
-                                                                                            position: 'absolute',
-                                                                                            inset: 0,
-                                                                                            width: '100%',
-                                                                                            height: '100%',
-                                                                                            border: 'none',
-                                                                                            background: 'transparent',
-                                                                                            textAlign: 'center',
-                                                                                            fontSize: '0.85rem',
-                                                                                            fontWeight: '700',
-                                                                                            color: currentValue >= targetValue ? habit.color : 'var(--text-main)',
-                                                                                            outline: 'none',
-                                                                                            padding: 0
-                                                                                        }}
-                                                                                    />
-                                                                                ) : (
-                                                                                    <div style={{
+                                                                                {/* Input field for all days */}
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min="0"
+                                                                                    value={currentValue || ''}
+                                                                                    onChange={(e) => handleUpdateQuantitativeValue(habit.id, dateStr, e.target.value)}
+                                                                                    placeholder="0"
+                                                                                    style={{
                                                                                         position: 'absolute',
                                                                                         inset: 0,
-                                                                                        display: 'flex',
-                                                                                        alignItems: 'center',
-                                                                                        justifyContent: 'center',
+                                                                                        width: '100%',
+                                                                                        height: '100%',
+                                                                                        border: 'none',
+                                                                                        background: 'transparent',
+                                                                                        textAlign: 'center',
                                                                                         fontSize: '0.85rem',
                                                                                         fontWeight: '700',
-                                                                                        color: currentValue >= targetValue ? habit.color : 'var(--text-main)'
-                                                                                    }}>
-                                                                                        {currentValue || 0}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
+                                                                                        color: currentValue >= targetValue ? habit.color : 'var(--text-main)',
+                                                                                        outline: 'none',
+                                                                                        padding: 0,
+                                                                                        cursor: 'pointer'
+                                                                                    }}
+                                                                                />
+                                                                            </motion.div>
                                                                         </div>
                                                                     );
                                                                 })}
@@ -1583,7 +1584,7 @@ function StatsView({
     CustomLineTooltip
 }) {
     if (selectedHabit) {
-        const { completionData, pieData, completedCount, missedCount } = getStatsData(selectedHabit.id);
+        const { completionData, pieData, completedCount, missedCount, averageValue, isQuantitative, targetValue } = getStatsData(selectedHabit.id);
         
         return (
             <motion.div
@@ -1661,7 +1662,15 @@ function StatsView({
                             transition={{ delay: 0.15 }}
                             style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}
                         >
-                            <AnimatedCounter value={calculateStreak(selectedHabit.id)} color={selectedHabit.color} /> day streak • <AnimatedCounter value={calculateCompletionRate(selectedHabit.id)} color="#34C759" />% completion rate
+                            {isQuantitative ? (
+                                <>
+                                    <AnimatedCounter value={calculateStreak(selectedHabit.id)} color={selectedHabit.color} /> day streak • Target: {targetValue} {selectedHabit.unit || 'units'} • <AnimatedCounter value={averageValue} color="#FF9500" /> avg
+                                </>
+                            ) : (
+                                <>
+                                    <AnimatedCounter value={calculateStreak(selectedHabit.id)} color={selectedHabit.color} /> day streak • <AnimatedCounter value={calculateCompletionRate(selectedHabit.id)} color="#34C759" />% completion rate
+                                </>
+                            )}
                         </motion.p>
                     </div>
                 </motion.div>
@@ -1737,11 +1746,53 @@ function StatsView({
                             style={{
                                 display: 'flex',
                                 justifyContent: 'center',
-                                gap: '28px',
-                                marginTop: '20px'
+                                gap: isQuantitative ? '12px' : '28px',
+                                marginTop: '20px',
+                                flexWrap: 'wrap'
                             }}
                         >
-                            {[
+                            {isQuantitative ? [
+                                { count: completedCount, label: 'Target Met', color: '#34C759' },
+                                { count: completionData.filter(d => d.value > 0 && d.value < targetValue).length, label: 'Partial', color: '#FF9500' },
+                                { count: completionData.filter(d => d.value === 0).length, label: 'Missed', color: '#FF3B30' }
+                            ].map((item, index) => (
+                                <motion.div
+                                    key={item.label}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
+                                    whileHover={{ scale: 1.05 }}
+                                    style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '8px',
+                                        padding: '8px 14px',
+                                        backgroundColor: `${item.color}12`,
+                                        borderRadius: '10px',
+                                        border: `2px solid ${item.color}25`
+                                    }}
+                                >
+                                    <motion.div
+                                        animate={{ 
+                                            boxShadow: [
+                                                `0 0 0 0 ${item.color}50`,
+                                                `0 0 0 6px ${item.color}00`,
+                                                `0 0 0 0 ${item.color}50`
+                                            ]
+                                        }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                        style={{
+                                            width: '10px',
+                                            height: '10px',
+                                            borderRadius: '50%',
+                                            backgroundColor: item.color
+                                        }}
+                                    />
+                                    <span style={{ fontSize: '0.85rem', color: item.color, fontWeight: '700' }}>
+                                        {item.count} {item.label}
+                                    </span>
+                                </motion.div>
+                            )) : [
                                 { count: completedCount, label: 'Completed', color: '#34C759' },
                                 { count: missedCount, label: 'Missed', color: '#FF3B30' }
                             ].map((item, index) => (
@@ -1814,7 +1865,32 @@ function StatsView({
                             gap: '16px',
                             flex: 1
                         }}>
-                            {[
+                            {(isQuantitative ? [
+                                { 
+                                    value: calculateStreak(selectedHabit.id), 
+                                    label: 'Current Streak', 
+                                    color: selectedHabit.color,
+                                    icon: <Activity size={20} />
+                                },
+                                { 
+                                    value: `${calculateCompletionRate(selectedHabit.id)}%`, 
+                                    label: 'Target Met', 
+                                    color: '#34C759',
+                                    icon: <Award size={20} />
+                                },
+                                { 
+                                    value: averageValue, 
+                                    label: `Avg ${selectedHabit.unit || 'Value'}`, 
+                                    color: '#FF9500',
+                                    icon: <Target size={20} />
+                                },
+                                { 
+                                    value: completionData.reduce((sum, d) => sum + d.value, 0), 
+                                    label: `Total ${selectedHabit.unit || 'Units'}`, 
+                                    color: '#5856D6',
+                                    icon: <TrendingUp size={20} />
+                                }
+                            ] : [
                                 { 
                                     value: calculateStreak(selectedHabit.id), 
                                     label: 'Current Streak', 
@@ -1839,7 +1915,7 @@ function StatsView({
                                     color: 'var(--text-muted)',
                                     icon: <Target size={20} />
                                 }
-                            ].map((stat, index) => (
+                            ]).map((stat, index) => (
                                 <motion.div
                                     key={stat.label}
                                     initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -1915,15 +1991,31 @@ function StatsView({
                         border: '1px solid var(--border)'
                     }}
                 >
-                    <h4 style={{
-                        fontSize: '1rem',
-                        fontWeight: '700',
-                        marginBottom: '24px',
-                        color: 'var(--text-main)',
-                        letterSpacing: '-0.01em'
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '24px'
                     }}>
-                        30-Day Trend
-                    </h4>
+                        <h4 style={{
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            color: 'var(--text-main)',
+                            letterSpacing: '-0.01em',
+                            margin: 0
+                        }}>
+                            30-Day Trend
+                        </h4>
+                        {isQuantitative && (
+                            <div style={{
+                                fontSize: '0.85rem',
+                                color: 'var(--text-muted)',
+                                fontWeight: '600'
+                            }}>
+                                Target: {targetValue} {selectedHabit.unit || 'units'}
+                            </div>
+                        )}
+                    </div>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -1958,28 +2050,74 @@ function StatsView({
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
-                                    domain={[0, 1]}
-                                    ticks={[0, 1]}
-                                    tickFormatter={(value) => value === 1 ? 'Done' : 'Miss'}
+                                    domain={isQuantitative ? [0, 'auto'] : [0, 1]}
+                                    ticks={isQuantitative ? undefined : [0, 1]}
+                                    tickFormatter={isQuantitative ? undefined : (value) => value === 1 ? 'Done' : 'Miss'}
                                     tick={{ fill: 'var(--text-muted)', fontWeight: 600 }}
                                 />
-                                <Tooltip content={<CustomLineTooltip />} />
-                                <Area
-                                    type="monotone"
-                                    dataKey="completed"
-                                    stroke={selectedHabit.color}
-                                    strokeWidth={4}
-                                    fill={`url(#gradient-${selectedHabit.id})`}
-                                    animationDuration={2000}
-                                    animationEasing="ease-out"
-                                    dot={false}
-                                    activeDot={{ 
-                                        r: 8, 
-                                        fill: selectedHabit.color,
-                                        stroke: 'var(--bg-card)',
-                                        strokeWidth: 4
-                                    }}
+                                <Tooltip 
+                                    content={isQuantitative ? ({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                                <div style={{
+                                                    backgroundColor: 'var(--bg-card)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '12px',
+                                                    padding: '12px 16px',
+                                                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                                                }}>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>
+                                                        {label}
+                                                    </div>
+                                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: selectedHabit.color }}>
+                                                        {data.value} / {targetValue} {selectedHabit.unit || 'units'}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                                        {data.value >= targetValue ? '✓ Target met' : data.value > 0 ? 'Partial progress' : 'Missed'}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    } : <CustomLineTooltip />} 
                                 />
+                                {isQuantitative && (
+                                    <Area
+                                        type="monotone"
+                                        dataKey="value"
+                                        stroke={selectedHabit.color}
+                                        strokeWidth={3}
+                                        fill={`url(#gradient-${selectedHabit.id})`}
+                                        animationDuration={2000}
+                                        animationEasing="ease-out"
+                                        dot={{ r: 4, fill: selectedHabit.color, stroke: 'var(--bg-card)', strokeWidth: 2 }}
+                                        activeDot={{ 
+                                            r: 8, 
+                                            fill: selectedHabit.color,
+                                            stroke: 'var(--bg-card)',
+                                            strokeWidth: 4
+                                        }}
+                                    />
+                                )}
+                                {!isQuantitative && (
+                                    <Area
+                                        type="monotone"
+                                        dataKey="completed"
+                                        stroke={selectedHabit.color}
+                                        strokeWidth={4}
+                                        fill={`url(#gradient-${selectedHabit.id})`}
+                                        animationDuration={2000}
+                                        animationEasing="ease-out"
+                                        dot={false}
+                                        activeDot={{ 
+                                            r: 8, 
+                                            fill: selectedHabit.color,
+                                            stroke: 'var(--bg-card)',
+                                            strokeWidth: 4
+                                        }}
+                                    />
+                                )}
                             </AreaChart>
                         </ResponsiveContainer>
                     </motion.div>
