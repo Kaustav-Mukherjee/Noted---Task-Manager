@@ -237,6 +237,8 @@ function NowPlayingIndicator({ nowPlaying }) {
                         display: 'flex',
                         gap: '3px',
                         marginTop: '4px',
+                        height: '20px',
+                        alignItems: 'flex-end',
                     }}
                 >
                     {[0, 1, 2].map((i) => (
@@ -244,10 +246,11 @@ function NowPlayingIndicator({ nowPlaying }) {
                             key={i}
                             style={{
                                 width: 3,
-                                height: 12,
+                                height: '12px',
                                 backgroundColor: '#ef4444',
                                 borderRadius: '2px',
-                                animation: `equalizer 0.8s ease-in-out ${i * 0.15}s infinite`,
+                                transformOrigin: 'bottom',
+                                animation: `equalizer-scale 0.8s ease-in-out ${i * 0.15}s infinite`,
                             }}
                         />
                     ))}
@@ -768,9 +771,9 @@ export default function SharedDashboardView() {
                     50% { transform: scale(1.3); opacity: 0.7; }
                 }
                 
-                @keyframes equalizer {
-                    0%, 100% { height: 12px; }
-                    50% { height: 20px; }
+                @keyframes equalizer-scale {
+                    0%, 100% { transform: scaleY(1); }
+                    50% { transform: scaleY(1.6); }
                 }
                 
                 @keyframes progress {
