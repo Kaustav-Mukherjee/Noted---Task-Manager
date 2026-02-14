@@ -1375,6 +1375,16 @@ function HabitTracker({ isOpen, onClose }) {
                                                                     const isToday = isSameDay(day, new Date());
                                                                     const dayLabel = format(day, 'EEE')[0];
 
+                                                                    const handleIncrement = () => {
+                                                                        const newValue = (currentValue || 0) + 1;
+                                                                        handleUpdateQuantitativeValue(habit.id, dateStr, newValue);
+                                                                    };
+                                                                    
+                                                                    const handleDecrement = () => {
+                                                                        const newValue = Math.max(0, (currentValue || 0) - 1);
+                                                                        handleUpdateQuantitativeValue(habit.id, dateStr, newValue);
+                                                                    };
+
                                                                     return (
                                                                         <div
                                                                             key={dayIndex}
@@ -1382,7 +1392,7 @@ function HabitTracker({ isOpen, onClose }) {
                                                                                 display: 'flex',
                                                                                 flexDirection: 'column',
                                                                                 alignItems: 'center',
-                                                                                gap: '8px',
+                                                                                gap: '6px',
                                                                                 flex: 1
                                                                             }}
                                                                         >
@@ -1393,67 +1403,104 @@ function HabitTracker({ isOpen, onClose }) {
                                                                             }}>
                                                                                 {dayLabel}
                                                                             </span>
-                                                                            <motion.div 
-                                                                                whileHover={{ scale: 1.05 }}
-                                                                                whileTap={{ scale: 0.95 }}
-                                                                                style={{
-                                                                                    position: 'relative',
-                                                                                    width: '44px',
-                                                                                    height: '44px',
-                                                                                    borderRadius: '12px',
-                                                                                    backgroundColor: 'var(--bg-input)',
-                                                                                    overflow: 'hidden',
-                                                                                    border: `2px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
-                                                                                    cursor: 'pointer',
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    justifyContent: 'center'
-                                                                                }}
-                                                                            >
-                                                                                {/* Progress fill */}
-                                                                                <motion.div
-                                                                                    initial={{ height: 0 }}
-                                                                                    animate={{ height: `${percentage}%` }}
-                                                                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                                                            <div style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '4px'
+                                                                            }}>
+                                                                                {/* Decrement Button */}
+                                                                                <motion.button
+                                                                                    type="button"
+                                                                                    whileHover={{ scale: 1.1, backgroundColor: `${habit.color}30` }}
+                                                                                    whileTap={{ scale: 0.9 }}
+                                                                                    onClick={handleDecrement}
                                                                                     style={{
-                                                                                        position: 'absolute',
-                                                                                        bottom: 0,
-                                                                                        left: 0,
-                                                                                        right: 0,
-                                                                                        backgroundColor: habit.color,
-                                                                                        opacity: 0.3,
-                                                                                        zIndex: 0
-                                                                                    }}
-                                                                                />
-                                                                                {/* Input field for all days */}
-                                                                                <input
-                                                                                    type="number"
-                                                                                    min="0"
-                                                                                    value={currentValue || ''}
-                                                                                    onChange={(e) => handleUpdateQuantitativeValue(habit.id, dateStr, e.target.value)}
-                                                                                    placeholder="0"
-                                                                                    style={{
-                                                                                        position: 'relative',
-                                                                                        zIndex: 1,
-                                                                                        width: '100%',
-                                                                                        height: '100%',
-                                                                                        border: 'none',
-                                                                                        background: 'transparent',
-                                                                                        textAlign: 'center',
-                                                                                        fontSize: '0.9rem',
-                                                                                        fontWeight: '700',
-                                                                                        color: currentValue >= targetValue ? habit.color : 'var(--text-main)',
-                                                                                        outline: 'none',
-                                                                                        padding: 0,
-                                                                                        margin: 0,
+                                                                                        width: '24px',
+                                                                                        height: '24px',
+                                                                                        borderRadius: '6px',
+                                                                                        border: `1.5px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
+                                                                                        backgroundColor: 'var(--bg-input)',
+                                                                                        color: currentValue >= targetValue ? habit.color : 'var(--text-muted)',
                                                                                         cursor: 'pointer',
                                                                                         display: 'flex',
                                                                                         alignItems: 'center',
                                                                                         justifyContent: 'center',
-                                                                                        lineHeight: '44px'
+                                                                                        fontSize: '0.9rem',
+                                                                                        fontWeight: '700',
+                                                                                        padding: 0
                                                                                     }}
-                                                                                />
-                                                                            </motion.div>
+                                                                                >
+                                                                                    −
+                                                                                </motion.button>
+                                                                                
+                                                                                {/* Value Display Box */}
+                                                                                <motion.div 
+                                                                                    whileHover={{ scale: 1.02 }}
+                                                                                    style={{
+                                                                                        position: 'relative',
+                                                                                        width: '38px',
+                                                                                        height: '38px',
+                                                                                        borderRadius: '10px',
+                                                                                        backgroundColor: 'var(--bg-input)',
+                                                                                        overflow: 'hidden',
+                                                                                        border: `2px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center'
+                                                                                    }}
+                                                                                >
+                                                                                    {/* Progress fill */}
+                                                                                    <motion.div
+                                                                                        initial={{ height: 0 }}
+                                                                                        animate={{ height: `${percentage}%` }}
+                                                                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                                                                        style={{
+                                                                                            position: 'absolute',
+                                                                                            bottom: 0,
+                                                                                            left: 0,
+                                                                                            right: 0,
+                                                                                            backgroundColor: habit.color,
+                                                                                            opacity: 0.25,
+                                                                                            zIndex: 0
+                                                                                        }}
+                                                                                    />
+                                                                                    {/* Value */}
+                                                                                    <span style={{
+                                                                                        position: 'relative',
+                                                                                        zIndex: 1,
+                                                                                        fontSize: '0.95rem',
+                                                                                        fontWeight: '700',
+                                                                                        color: currentValue >= targetValue ? habit.color : 'var(--text-main)'
+                                                                                    }}>
+                                                                                        {currentValue || 0}
+                                                                                    </span>
+                                                                                </motion.div>
+                                                                                
+                                                                                {/* Increment Button */}
+                                                                                <motion.button
+                                                                                    type="button"
+                                                                                    whileHover={{ scale: 1.1, backgroundColor: `${habit.color}30` }}
+                                                                                    whileTap={{ scale: 0.9 }}
+                                                                                    onClick={handleIncrement}
+                                                                                    style={{
+                                                                                        width: '24px',
+                                                                                        height: '24px',
+                                                                                        borderRadius: '6px',
+                                                                                        border: `1.5px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
+                                                                                        backgroundColor: 'var(--bg-input)',
+                                                                                        color: currentValue >= targetValue ? habit.color : 'var(--text-muted)',
+                                                                                        cursor: 'pointer',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        fontSize: '0.9rem',
+                                                                                        fontWeight: '700',
+                                                                                        padding: 0
+                                                                                    }}
+                                                                                >
+                                                                                    +
+                                                                                </motion.button>
+                                                                            </div>
                                                                         </div>
                                                                     );
                                                                 })}
