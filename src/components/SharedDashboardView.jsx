@@ -714,13 +714,14 @@ export default function SharedDashboardView() {
                 }
                 
                 .tasks-card:hover {
-                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 
-                                0 0 40px rgba(34, 197, 94, 0.1),
+                    box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3), 
+                                0 0 60px rgba(34, 197, 94, 0.2),
                                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    border-color: rgba(34, 197, 94, 0.4);
                 }
                 
                 .tasks-card:hover::before {
-                    background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
+                    background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.2) 0%, transparent 70%);
                 }
                 
                 .study-card:hover {
@@ -735,14 +736,14 @@ export default function SharedDashboardView() {
                 }
                 
                 .goals-card:hover {
-                    box-shadow: 0 20px 40px rgba(34, 197, 94, 0.25), 
-                                0 0 60px rgba(34, 197, 94, 0.15),
+                    box-shadow: 0 20px 40px rgba(245, 158, 11, 0.3), 
+                                0 0 60px rgba(245, 158, 11, 0.2),
                                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
-                    border-color: rgba(34, 197, 94, 0.4);
+                    border-color: rgba(245, 158, 11, 0.4);
                 }
                 
                 .goals-card:hover::before {
-                    background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
+                    background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.2) 0%, transparent 70%);
                 }
                 
                 .recent-tasks-card:hover {
@@ -1214,12 +1215,12 @@ export default function SharedDashboardView() {
                                                 width: 36,
                                                 height: 36,
                                                 borderRadius: '10px',
-                                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                             }}>
-                                                <Target size={18} color="#22c55e" />
+                                                <Target size={18} color="#f59e0b" />
                                             </div>
                                         }
                                     />
@@ -1271,10 +1272,10 @@ export default function SharedDashboardView() {
                                                         <div style={{
                                                             height: '100%',
                                                             width: `${Math.min(percentage, 100)}%`,
-                                                            backgroundColor: percentage >= 100 ? '#22c55e' : '#3b82f6',
+                                                            backgroundColor: percentage >= 100 ? '#f59e0b' : '#f59e0b',
                                                             borderRadius: '4px',
                                                             transition: 'width 0.5s ease-out',
-                                                            boxShadow: percentage >= 100 ? '0 0 10px rgba(34, 197, 94, 0.5)' : '0 0 10px rgba(59, 130, 246, 0.3)',
+                                                            boxShadow: '0 0 10px rgba(245, 158, 11, 0.5)',
                                                         }} />
                                                     </div>
                                                 </div>
