@@ -210,16 +210,8 @@ const iconBounceVariants = {
     },
 };
 
-const lottieFloatVariants = {
-    animate: {
-        y: [0, -5, 0],
-        transition: {
-            duration: 2.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-        },
-    },
-};
+// REMOVED: lottieFloatVariants was causing vibration issues
+// Lottie animations now play their internal animation without additional floating
 
 const progressBarVariants = {
     hidden: { width: 0 },
@@ -362,8 +354,6 @@ function FocusModeIndicator({ timerState }) {
         >
             <motion.div 
                 style={{ width: 70, height: 70 }}
-                variants={lottieFloatVariants}
-                animate="animate"
             >
                 <LottieAnimation 
                     animationData={LOTTIE_ANIMATIONS.focus}
@@ -454,8 +444,6 @@ function NowPlayingIndicator({ nowPlaying }) {
         >
             <motion.div 
                 style={{ width: 65, height: 65 }}
-                variants={hasMusic ? lottieFloatVariants : {}}
-                animate={hasMusic ? "animate" : ""}
             >
                 <LottieAnimation 
                     animationData={LOTTIE_ANIMATIONS.music}
@@ -602,8 +590,6 @@ function StatCard({ title, value, color, animationData, icon: Icon, delay }) {
         >
             <motion.div 
                 style={{ width: 55, height: 55 }}
-                variants={lottieFloatVariants}
-                animate="animate"
             >
                 <LottieAnimation 
                     animationData={animationData}
@@ -1212,8 +1198,6 @@ export default function SharedDashboardView() {
                         />
                         <motion.div 
                             style={{ width: 55, height: 55, position: 'relative', zIndex: 1 }}
-                            variants={lottieFloatVariants}
-                            animate="animate"
                         >
                             <LottieAnimation 
                                 animationData={LOTTIE_ANIMATIONS.fire}
@@ -1300,8 +1284,6 @@ export default function SharedDashboardView() {
                         />
                         <motion.div 
                             style={{ width: 55, height: 55, position: 'relative', zIndex: 1 }}
-                            variants={lottieFloatVariants}
-                            animate="animate"
                         >
                             <LottieAnimation 
                                 animationData={LOTTIE_ANIMATIONS.check}
