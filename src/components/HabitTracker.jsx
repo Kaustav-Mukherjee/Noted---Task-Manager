@@ -1404,7 +1404,10 @@ function HabitTracker({ isOpen, onClose }) {
                                                                                     backgroundColor: 'var(--bg-input)',
                                                                                     overflow: 'hidden',
                                                                                     border: `2px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
-                                                                                    cursor: 'pointer'
+                                                                                    cursor: 'pointer',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center'
                                                                                 }}
                                                                             >
                                                                                 {/* Progress fill */}
@@ -1418,7 +1421,8 @@ function HabitTracker({ isOpen, onClose }) {
                                                                                         left: 0,
                                                                                         right: 0,
                                                                                         backgroundColor: habit.color,
-                                                                                        opacity: 0.3
+                                                                                        opacity: 0.3,
+                                                                                        zIndex: 0
                                                                                     }}
                                                                                 />
                                                                                 {/* Input field for all days */}
@@ -1429,19 +1433,24 @@ function HabitTracker({ isOpen, onClose }) {
                                                                                     onChange={(e) => handleUpdateQuantitativeValue(habit.id, dateStr, e.target.value)}
                                                                                     placeholder="0"
                                                                                     style={{
-                                                                                        position: 'absolute',
-                                                                                        inset: 0,
+                                                                                        position: 'relative',
+                                                                                        zIndex: 1,
                                                                                         width: '100%',
                                                                                         height: '100%',
                                                                                         border: 'none',
                                                                                         background: 'transparent',
                                                                                         textAlign: 'center',
-                                                                                        fontSize: '0.85rem',
+                                                                                        fontSize: '0.9rem',
                                                                                         fontWeight: '700',
                                                                                         color: currentValue >= targetValue ? habit.color : 'var(--text-main)',
                                                                                         outline: 'none',
                                                                                         padding: 0,
-                                                                                        cursor: 'pointer'
+                                                                                        margin: 0,
+                                                                                        cursor: 'pointer',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        lineHeight: '44px'
                                                                                     }}
                                                                                 />
                                                                             </motion.div>
