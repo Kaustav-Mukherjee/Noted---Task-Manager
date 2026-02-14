@@ -10,7 +10,9 @@ import {
     addHabit, 
     updateHabit, 
     deleteHabit, 
-    toggleHabitCompletion 
+    toggleHabitCompletion,
+    addHabitCompletion,
+    updateHabitCompletion
 } from '../services/firestoreService';
 
 const HABIT_COLORS = [
@@ -318,7 +320,9 @@ function HabitTracker({ isOpen, onClose }) {
     const [habitDescription, setHabitDescription] = useState('');
     const [habitColor, setHabitColor] = useState(HABIT_COLORS[0]);
     const [habitFrequency, setHabitFrequency] = useState('daily');
+    const [habitType, setHabitType] = useState('binary'); // 'binary' or 'quantitative'
     const [habitTarget, setHabitTarget] = useState(1);
+    const [habitUnit, setHabitUnit] = useState('');
 
     // Subscribe to habits and completions
     useEffect(() => {
@@ -344,39 +348,84 @@ function HabitTracker({ isOpen, onClose }) {
         });
     }, [today]);
 
-    // Check if a habit is completed for a specific date
-    const isHabitCompleted = (habitId, dateStr) => {
-        return completions.some(c => c.habitId === habitId && c.date === dateStr);
+    // Get completion data for a habit on a specific date
+    const getHabitCompletion = (habitId, dateStr) => {
+        return completions.find(c => c.habitId === habitId && c.date === dateStr);
     };
 
-    // Toggle habit completion with animation
+    // Check if a habit is completed for a specific date
+    const isHabitCompleted = (habitId, dateStr) => {
+        const completion = getHabitCompletion(habitId, dateStr);
+        return completion ? completion.completed : false;
+    };
+
+    // Get completion value for quantitative habits
+    const getHabitValue = (habitId, dateStr) => {
+        const completion = getHabitCompletion(habitId, dateStr);
+        return completion ? (completion.value || 0) : 0;
+    };
+
+    // Toggle habit completion for binary habits
     const handleToggleCompletion = async (habitId, dateStr) => {
         if (!user) return;
+        const habit = habits.find(h => h.id === habitId);
+        if (!habit || habit.type === 'quantitative') return; // Only for binary habits
+        
         const isCompleted = isHabitCompleted(habitId, dateStr);
         await toggleHabitCompletion(user.uid, habitId, dateStr, !isCompleted);
     };
 
+    // Update quantitative habit value
+    const handleUpdateQuantitativeValue = async (habitId, dateStr, value) => {
+        if (!user) return;
+        const habit = habits.find(h => h.id === habitId);
+        if (!habit || habit.type !== 'quantitative') return;
+        
+        const numValue = parseInt(value) || 0;
+        const completion = getHabitCompletion(habitId, dateStr);
+        
+        if (completion) {
+            await updateHabitCompletion(user.uid, habitId, dateStr, numValue);
+        } else {
+            await addHabitCompletion(user.uid, habitId, dateStr, numValue);
+        }
+    };
+
     // Calculate streak for a habit
     const calculateStreak = (habitId) => {
+        const habit = habits.find(h => h.id === habitId);
+        if (!habit) return 0;
+
         let streak = 0;
-        const sortedCompletions = completions
-            .filter(c => c.habitId === habitId)
-            .map(c => c.date)
-            .sort((a, b) => new Date(b) - new Date(a));
-        
-        if (sortedCompletions.length === 0) return 0;
-        
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
-        const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-        
-        if (!sortedCompletions.includes(todayStr) && !sortedCompletions.includes(yesterdayStr)) {
-            return 0;
-        }
-        
         let checkDate = new Date();
-        for (let i = 0; i < sortedCompletions.length; i++) {
+        const targetValue = habit.target || 1;
+
+        // For quantitative habits, check if value >= target
+        // For binary habits, check if completed
+        const isDayCompleted = (dateStr) => {
+            if (habit.type === 'quantitative') {
+                const value = getHabitValue(habitId, dateStr);
+                return value >= targetValue;
+            } else {
+                return isHabitCompleted(habitId, dateStr);
+            }
+        };
+
+        // Check today first
+        const todayStr = format(checkDate, 'yyyy-MM-dd');
+        if (!isDayCompleted(todayStr)) {
+            // If today not completed, check yesterday
+            checkDate = subDays(checkDate, 1);
+            const yesterdayStr = format(checkDate, 'yyyy-MM-dd');
+            if (!isDayCompleted(yesterdayStr)) {
+                return 0;
+            }
+        }
+
+        // Count streak
+        while (true) {
             const dateStr = format(checkDate, 'yyyy-MM-dd');
-            if (sortedCompletions.includes(dateStr)) {
+            if (isDayCompleted(dateStr)) {
                 streak++;
                 checkDate = subDays(checkDate, 1);
             } else {
@@ -388,14 +437,24 @@ function HabitTracker({ isOpen, onClose }) {
 
     // Calculate completion rate for last 30 days
     const calculateCompletionRate = (habitId) => {
+        const habit = habits.find(h => h.id === habitId);
+        if (!habit) return 0;
+
         const last30Days = eachDayOfInterval({
             start: subDays(new Date(), 29),
             end: new Date()
         });
         
+        const targetValue = habit.target || 1;
+        
         const completedDays = last30Days.filter(day => {
             const dateStr = format(day, 'yyyy-MM-dd');
-            return isHabitCompleted(habitId, dateStr);
+            if (habit.type === 'quantitative') {
+                const value = getHabitValue(habitId, dateStr);
+                return value >= targetValue;
+            } else {
+                return isHabitCompleted(habitId, dateStr);
+            }
         }).length;
         
         return Math.round((completedDays / 30) * 100);
@@ -411,7 +470,9 @@ function HabitTracker({ isOpen, onClose }) {
             description: habitDescription.trim(),
             color: habitColor,
             frequency: habitFrequency,
-            target: parseInt(habitTarget) || 1
+            type: habitType,
+            target: parseInt(habitTarget) || 1,
+            unit: habitUnit.trim() || (habitType === 'quantitative' ? 'times' : '')
         };
 
         if (editingHabit) {
@@ -441,7 +502,9 @@ function HabitTracker({ isOpen, onClose }) {
         setHabitDescription('');
         setHabitColor(HABIT_COLORS[0]);
         setHabitFrequency('daily');
+        setHabitType('binary');
         setHabitTarget(1);
+        setHabitUnit('');
     };
 
     // Open edit modal
@@ -451,23 +514,42 @@ function HabitTracker({ isOpen, onClose }) {
         setHabitDescription(habit.description || '');
         setHabitColor(habit.color || HABIT_COLORS[0]);
         setHabitFrequency(habit.frequency || 'daily');
+        setHabitType(habit.type || 'binary');
         setHabitTarget(habit.target || 1);
+        setHabitUnit(habit.unit || '');
         setShowAddModal(true);
     };
 
     // Stats data preparation
     const getStatsData = (habitId) => {
+        const habit = habits.find(h => h.id === habitId);
         const last30Days = eachDayOfInterval({
             start: subDays(new Date(), 29),
             end: new Date()
         });
 
+        const targetValue = habit?.target || 1;
+        const isQuantitative = habit?.type === 'quantitative';
+
         const completionData = last30Days.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd');
-            return {
-                date: format(day, 'MMM d'),
-                completed: isHabitCompleted(habitId, dateStr) ? 1 : 0
-            };
+            if (isQuantitative) {
+                const value = getHabitValue(habitId, dateStr);
+                return {
+                    date: format(day, 'MMM d'),
+                    value: value,
+                    target: targetValue,
+                    completed: value >= targetValue ? 1 : 0,
+                    percentage: Math.min((value / targetValue) * 100, 100)
+                };
+            } else {
+                return {
+                    date: format(day, 'MMM d'),
+                    completed: isHabitCompleted(habitId, dateStr) ? 1 : 0,
+                    value: isHabitCompleted(habitId, dateStr) ? 1 : 0,
+                    target: 1
+                };
+            }
         });
 
         const completedCount = completionData.filter(d => d.completed === 1).length;
@@ -478,7 +560,14 @@ function HabitTracker({ isOpen, onClose }) {
             { name: 'Missed', value: missedCount, color: '#FF3B30' }
         ];
 
-        return { completionData, pieData, completedCount, missedCount };
+        // Calculate average value for quantitative habits
+        let averageValue = 0;
+        if (isQuantitative) {
+            const totalValue = completionData.reduce((sum, d) => sum + d.value, 0);
+            averageValue = Math.round((totalValue / 30) * 10) / 10;
+        }
+
+        return { completionData, pieData, completedCount, missedCount, averageValue, isQuantitative, targetValue };
     };
 
     // Custom tooltip component
@@ -1149,91 +1238,218 @@ function HabitTracker({ isOpen, onClose }) {
                                                         </motion.div>
                                                     </div>
 
-                                                    {/* Weekly Progress */}
-                                                    <motion.div
-                                                        className="weekly-progress"
-                                                        initial={{ opacity: 0, y: 20 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        transition={{ delay: index * 0.05 + 0.2 }}
-                                                        style={{
-                                                            display: 'flex',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'center',
-                                                            backgroundColor: 'var(--bg-card)',
-                                                            borderRadius: '16px',
-                                                            padding: '16px 20px',
-                                                            gap: '12px'
-                                                        }}
-                                                    >
-                                                        {last7Days.map((day, dayIndex) => {
-                                                            const dateStr = format(day, 'yyyy-MM-dd');
-                                                            const isCompleted = isHabitCompleted(habit.id, dateStr);
-                                                            const isToday = isSameDay(day, new Date());
-                                                            const dayLabel = format(day, 'EEE')[0];
+                                                    {/* Weekly Progress - Binary Habits */}
+                                                    {(!habit.type || habit.type === 'binary') && (
+                                                        <motion.div
+                                                            className="weekly-progress"
+                                                            initial={{ opacity: 0, y: 20 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: index * 0.05 + 0.2 }}
+                                                            style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                backgroundColor: 'var(--bg-card)',
+                                                                borderRadius: '16px',
+                                                                padding: '16px 20px',
+                                                                gap: '12px'
+                                                            }}
+                                                        >
+                                                            {last7Days.map((day, dayIndex) => {
+                                                                const dateStr = format(day, 'yyyy-MM-dd');
+                                                                const isCompleted = isHabitCompleted(habit.id, dateStr);
+                                                                const isToday = isSameDay(day, new Date());
+                                                                const dayLabel = format(day, 'EEE')[0];
 
-                                                            return (
-                                                                <motion.button
-                                                                    key={dayIndex}
-                                                                    className="day-button"
-                                                                    variants={buttonVariants}
-                                                                    initial="initial"
-                                                                    whileHover="hover"
-                                                                    whileTap="tap"
-                                                                    onClick={() => handleToggleCompletion(habit.id, dateStr)}
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        alignItems: 'center',
-                                                                        gap: '8px',
-                                                                        backgroundColor: 'transparent',
-                                                                        border: 'none',
-                                                                        cursor: 'pointer',
-                                                                        padding: '6px'
-                                                                    }}
-                                                                >
-                                                                    <motion.span
-                                                                        animate={{ 
-                                                                            color: isToday ? 'var(--text-main)' : 'var(--text-muted)',
-                                                                            fontWeight: isToday ? '700' : '500'
-                                                                        }}
-                                                                        style={{ fontSize: '0.7rem' }}
-                                                                    >
-                                                                        {dayLabel}
-                                                                    </motion.span>
-                                                                    <motion.div
-                                                                        variants={checkVariants}
-                                                                        initial="unchecked"
-                                                                        animate={isCompleted ? "checked" : "unchecked"}
+                                                                return (
+                                                                    <motion.button
+                                                                        key={dayIndex}
+                                                                        className="day-button"
+                                                                        variants={buttonVariants}
+                                                                        initial="initial"
+                                                                        whileHover="hover"
+                                                                        whileTap="tap"
+                                                                        onClick={() => handleToggleCompletion(habit.id, dateStr)}
                                                                         style={{
-                                                                            width: '36px',
-                                                                            height: '36px',
-                                                                            borderRadius: '12px',
                                                                             display: 'flex',
+                                                                            flexDirection: 'column',
                                                                             alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            border: `2.5px solid`,
-                                                                            borderColor: isCompleted ? habit.color : 'var(--border)',
-                                                                            backgroundColor: isCompleted ? habit.color : 'var(--bg-input)',
-                                                                            color: habit.color
+                                                                            gap: '8px',
+                                                                            backgroundColor: 'transparent',
+                                                                            border: 'none',
+                                                                            cursor: 'pointer',
+                                                                            padding: '6px'
                                                                         }}
                                                                     >
-                                                                        <AnimatePresence>
-                                                                            {isCompleted && (
+                                                                        <motion.span
+                                                                            animate={{ 
+                                                                                color: isToday ? 'var(--text-main)' : 'var(--text-muted)',
+                                                                                fontWeight: isToday ? '700' : '500'
+                                                                            }}
+                                                                            style={{ fontSize: '0.7rem' }}
+                                                                        >
+                                                                            {dayLabel}
+                                                                        </motion.span>
+                                                                        <motion.div
+                                                                            variants={checkVariants}
+                                                                            initial="unchecked"
+                                                                            animate={isCompleted ? "checked" : "unchecked"}
+                                                                            style={{
+                                                                                width: '36px',
+                                                                                height: '36px',
+                                                                                borderRadius: '12px',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                border: `2.5px solid`,
+                                                                                borderColor: isCompleted ? habit.color : 'var(--border)',
+                                                                                backgroundColor: isCompleted ? habit.color : 'var(--bg-input)',
+                                                                                color: habit.color
+                                                                            }}
+                                                                        >
+                                                                            <AnimatePresence>
+                                                                                {isCompleted && (
+                                                                                    <motion.div
+                                                                                        initial={{ scale: 0, opacity: 0 }}
+                                                                                        animate={{ scale: 1, opacity: 1 }}
+                                                                                        exit={{ scale: 0, opacity: 0 }}
+                                                                                        transition={{ type: "spring", stiffness: 500 }}
+                                                                                    >
+                                                                                        <AnimatedCheckmark isChecked={true} color={habit.color} />
+                                                                                    </motion.div>
+                                                                                )}
+                                                                            </AnimatePresence>
+                                                                        </motion.div>
+                                                                    </motion.button>
+                                                                );
+                                                            })}
+                                                        </motion.div>
+                                                    )}
+
+                                                    {/* Weekly Progress - Quantitative Habits */}
+                                                    {habit.type === 'quantitative' && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 20 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: index * 0.05 + 0.2 }}
+                                                            style={{
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '12px',
+                                                                backgroundColor: 'var(--bg-card)',
+                                                                borderRadius: '16px',
+                                                                padding: '16px 20px'
+                                                            }}
+                                                        >
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                fontSize: '0.75rem',
+                                                                color: 'var(--text-muted)',
+                                                                marginBottom: '4px'
+                                                            }}>
+                                                                <span>Target: {habit.target || 1} {habit.unit || 'times'}</span>
+                                                                <span>Last 7 days</span>
+                                                            </div>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                gap: '8px'
+                                                            }}>
+                                                                {last7Days.map((day, dayIndex) => {
+                                                                    const dateStr = format(day, 'yyyy-MM-dd');
+                                                                    const currentValue = getHabitValue(habit.id, dateStr);
+                                                                    const targetValue = habit.target || 1;
+                                                                    const percentage = Math.min((currentValue / targetValue) * 100, 100);
+                                                                    const isToday = isSameDay(day, new Date());
+                                                                    const dayLabel = format(day, 'EEE')[0];
+
+                                                                    return (
+                                                                        <div
+                                                                            key={dayIndex}
+                                                                            style={{
+                                                                                display: 'flex',
+                                                                                flexDirection: 'column',
+                                                                                alignItems: 'center',
+                                                                                gap: '8px',
+                                                                                flex: 1
+                                                                            }}
+                                                                        >
+                                                                            <span style={{
+                                                                                fontSize: '0.7rem',
+                                                                                color: isToday ? 'var(--text-main)' : 'var(--text-muted)',
+                                                                                fontWeight: isToday ? '700' : '500'
+                                                                            }}>
+                                                                                {dayLabel}
+                                                                            </span>
+                                                                            <div style={{
+                                                                                position: 'relative',
+                                                                                width: '44px',
+                                                                                height: '44px',
+                                                                                borderRadius: '12px',
+                                                                                backgroundColor: 'var(--bg-input)',
+                                                                                overflow: 'hidden',
+                                                                                border: `2px solid ${currentValue >= targetValue ? habit.color : 'var(--border)'}`,
+                                                                            }}>
+                                                                                {/* Progress fill */}
                                                                                 <motion.div
-                                                                                    initial={{ scale: 0, opacity: 0 }}
-                                                                                    animate={{ scale: 1, opacity: 1 }}
-                                                                                    exit={{ scale: 0, opacity: 0 }}
-                                                                                    transition={{ type: "spring", stiffness: 500 }}
-                                                                                >
-                                                                                    <AnimatedCheckmark isChecked={true} color={habit.color} />
-                                                                                </motion.div>
-                                                                            )}
-                                                                        </AnimatePresence>
-                                                                    </motion.div>
-                                                                </motion.button>
-                                                            );
-                                                        })}
-                                                    </motion.div>
+                                                                                    initial={{ height: 0 }}
+                                                                                    animate={{ height: `${percentage}%` }}
+                                                                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                                                                    style={{
+                                                                                        position: 'absolute',
+                                                                                        bottom: 0,
+                                                                                        left: 0,
+                                                                                        right: 0,
+                                                                                        backgroundColor: habit.color,
+                                                                                        opacity: 0.3
+                                                                                    }}
+                                                                                />
+                                                                                {/* Input field for today only, display value for other days */}
+                                                                                {isToday ? (
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        min="0"
+                                                                                        value={currentValue || ''}
+                                                                                        onChange={(e) => handleUpdateQuantitativeValue(habit.id, dateStr, e.target.value)}
+                                                                                        placeholder="0"
+                                                                                        style={{
+                                                                                            position: 'absolute',
+                                                                                            inset: 0,
+                                                                                            width: '100%',
+                                                                                            height: '100%',
+                                                                                            border: 'none',
+                                                                                            background: 'transparent',
+                                                                                            textAlign: 'center',
+                                                                                            fontSize: '0.85rem',
+                                                                                            fontWeight: '700',
+                                                                                            color: currentValue >= targetValue ? habit.color : 'var(--text-main)',
+                                                                                            outline: 'none',
+                                                                                            padding: 0
+                                                                                        }}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div style={{
+                                                                                        position: 'absolute',
+                                                                                        inset: 0,
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        fontSize: '0.85rem',
+                                                                                        fontWeight: '700',
+                                                                                        color: currentValue >= targetValue ? habit.color : 'var(--text-main)'
+                                                                                    }}>
+                                                                                        {currentValue || 0}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
 
                                                     {/* Stats Summary */}
                                                     <motion.div
@@ -1332,8 +1548,12 @@ function HabitTracker({ isOpen, onClose }) {
                             setHabitColor={setHabitColor}
                             habitFrequency={habitFrequency}
                             setHabitFrequency={setHabitFrequency}
+                            habitType={habitType}
+                            setHabitType={setHabitType}
                             habitTarget={habitTarget}
                             setHabitTarget={setHabitTarget}
+                            habitUnit={habitUnit}
+                            setHabitUnit={setHabitUnit}
                             onSave={handleSaveHabit}
                             onClose={() => {
                                 setShowAddModal(false);
@@ -1924,8 +2144,12 @@ function HabitModal({
     setHabitColor,
     habitFrequency,
     setHabitFrequency,
+    habitType,
+    setHabitType,
     habitTarget,
     setHabitTarget,
+    habitUnit,
+    setHabitUnit,
     onSave,
     onClose
 }) {
@@ -2033,6 +2257,77 @@ function HabitModal({
                                 transition: 'all 0.2s'
                             }}
                         />
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.18 }}
+                    >
+                        <label style={{
+                            display: 'block',
+                            fontSize: '0.85rem',
+                            fontWeight: '700',
+                            marginBottom: '10px',
+                            color: 'var(--text-muted)',
+                            letterSpacing: '0.02em'
+                        }}>
+                            Habit Type
+                        </label>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <motion.button
+                                type="button"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setHabitType('binary')}
+                                style={{
+                                    flex: 1,
+                                    padding: '14px 20px',
+                                    backgroundColor: habitType === 'binary' ? habitColor : 'var(--bg-input)',
+                                    border: `2px solid ${habitType === 'binary' ? habitColor : 'var(--border)'}`,
+                                    borderRadius: '14px',
+                                    color: habitType === 'binary' ? 'white' : 'var(--text-main)',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                    <CheckCircle2 size={18} />
+                                    <span>Binary</span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px', fontWeight: '400' }}>
+                                    Done / Not Done
+                                </div>
+                            </motion.button>
+                            <motion.button
+                                type="button"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setHabitType('quantitative')}
+                                style={{
+                                    flex: 1,
+                                    padding: '14px 20px',
+                                    backgroundColor: habitType === 'quantitative' ? habitColor : 'var(--bg-input)',
+                                    border: `2px solid ${habitType === 'quantitative' ? habitColor : 'var(--border)'}`,
+                                    borderRadius: '14px',
+                                    color: habitType === 'quantitative' ? 'white' : 'var(--text-main)',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                    <Target size={18} />
+                                    <span>Quantitative</span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px', fontWeight: '400' }}>
+                                    Track a number
+                                </div>
+                            </motion.button>
+                        </div>
                     </motion.div>
 
                     <motion.div
@@ -2160,15 +2455,16 @@ function HabitModal({
                                 color: 'var(--text-muted)',
                                 letterSpacing: '0.02em'
                             }}>
-                                Daily Target
+                                {habitType === 'quantitative' ? 'Target Value' : 'Daily Target'}
                             </label>
                             <motion.input
                                 whileFocus={{ scale: 1.02 }}
                                 type="number"
                                 min="1"
-                                max="10"
+                                max={habitType === 'quantitative' ? '999' : '10'}
                                 value={habitTarget}
                                 onChange={(e) => setHabitTarget(e.target.value)}
+                                placeholder={habitType === 'quantitative' ? 'e.g., 8' : '1'}
                                 style={{
                                     width: '100%',
                                     padding: '16px 20px',
@@ -2184,6 +2480,44 @@ function HabitModal({
                             />
                         </div>
                     </motion.div>
+
+                    {habitType === 'quantitative' && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.38 }}
+                        >
+                            <label style={{
+                                display: 'block',
+                                fontSize: '0.85rem',
+                                fontWeight: '700',
+                                marginBottom: '10px',
+                                color: 'var(--text-muted)',
+                                letterSpacing: '0.02em'
+                            }}>
+                                Unit (e.g., glasses, minutes, pages)
+                            </label>
+                            <motion.input
+                                whileFocus={{ scale: 1.02 }}
+                                type="text"
+                                value={habitUnit}
+                                onChange={(e) => setHabitUnit(e.target.value)}
+                                placeholder="e.g., glasses, minutes, km"
+                                style={{
+                                    width: '100%',
+                                    padding: '16px 20px',
+                                    backgroundColor: 'var(--bg-input)',
+                                    border: '2px solid var(--border)',
+                                    borderRadius: '16px',
+                                    color: 'var(--text-main)',
+                                    fontSize: '1rem',
+                                    fontWeight: '500',
+                                    outline: 'none',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                        </motion.div>
+                    )}
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

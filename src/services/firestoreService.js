@@ -605,16 +605,30 @@ export const subscribeHabits = (userId, callback) => {
 // Habit Completions Collection
 export const habitCompletionsCollection = (userId) => collection(db, 'users', userId, 'habitCompletions');
 
-export const addHabitCompletion = async (userId, habitId, date) => {
+export const addHabitCompletion = async (userId, habitId, date, value = 1) => {
     const completionId = `${habitId}_${date}`;
     const completionRef = doc(db, 'users', userId, 'habitCompletions', completionId);
     await setDoc(completionRef, {
         habitId,
         date,
-        completed: true,
-        createdAt: serverTimestamp()
+        value,
+        completed: value > 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
     });
     return completionId;
+};
+
+export const updateHabitCompletion = async (userId, habitId, date, value) => {
+    const completionId = `${habitId}_${date}`;
+    const completionRef = doc(db, 'users', userId, 'habitCompletions', completionId);
+    await setDoc(completionRef, {
+        habitId,
+        date,
+        value,
+        completed: value > 0,
+        updatedAt: serverTimestamp()
+    }, { merge: true });
 };
 
 export const removeHabitCompletion = async (userId, habitId, date) => {
@@ -625,7 +639,7 @@ export const removeHabitCompletion = async (userId, habitId, date) => {
 
 export const toggleHabitCompletion = async (userId, habitId, date, isCompleted) => {
     if (isCompleted) {
-        await addHabitCompletion(userId, habitId, date);
+        await addHabitCompletion(userId, habitId, date, 1);
     } else {
         await removeHabitCompletion(userId, habitId, date);
     }
