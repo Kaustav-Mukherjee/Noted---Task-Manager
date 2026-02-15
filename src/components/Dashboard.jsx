@@ -277,6 +277,7 @@ function Dashboard({
     }, [studySessions, studyTimeRange, today]);
 
     const dailyGoalHours = goals?.dailyStudyGoal?.hours || 4; // Default 4 hours if not set
+    console.log('Dashboard.jsx: dailyGoalHours calculated:', dailyGoalHours, 'from goals:', goals, 'dailyStudyGoal:', goals?.dailyStudyGoal);
 
     const todayStudyHours = useMemo(() => {
         console.log('=== DEBUG: Calculating todayStudyHours ===');
@@ -379,7 +380,12 @@ function Dashboard({
     const handleUpdateGoal = (e) => {
         e.preventDefault();
         const hours = parseFloat(goalInput);
-        if (isNaN(hours) || hours <= 0) return;
+        console.log('Dashboard.jsx: handleUpdateGoal called, goalInput:', goalInput, 'parsed hours:', hours);
+        if (isNaN(hours) || hours <= 0) {
+            console.log('Dashboard.jsx: Invalid hours, aborting');
+            return;
+        }
+        console.log('Dashboard.jsx: Calling updateGoal with dailyStudyGoal and hours:', hours);
         updateGoal('dailyStudyGoal', hours);
         setShowGoalModal(false);
         setGoalInput('');

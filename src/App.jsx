@@ -71,6 +71,8 @@ function App() {
 
         // Subscribe to goals
         const unsubGoals = firestoreService.subscribeGoals(user.uid, (firestoreGoals) => {
+            console.log('App.jsx: Goals received from Firestore:', firestoreGoals);
+            console.log('App.jsx: dailyStudyGoal:', firestoreGoals?.dailyStudyGoal);
             setGoals(firestoreGoals);
         });
 
@@ -273,7 +275,17 @@ function App() {
     };
 
     const updateGoal = async (goalId, hours) => {
-        if (user) await firestoreService.updateGoal(user.uid, goalId, hours);
+        console.log('App.jsx: updateGoal called with goalId:', goalId, 'hours:', hours);
+        if (user) {
+            try {
+                await firestoreService.updateGoal(user.uid, goalId, hours);
+                console.log('App.jsx: updateGoal completed successfully');
+            } catch (error) {
+                console.error('App.jsx: updateGoal failed:', error);
+            }
+        } else {
+            console.log('App.jsx: updateGoal skipped - no user');
+        }
     };
 
     // Calculate daily goal progress for celebration effect
