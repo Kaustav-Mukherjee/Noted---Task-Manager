@@ -526,6 +526,7 @@ export const subscribeUserPreferences = (userId, callback) => {
 export const goalsCollection = (userId) => collection(db, 'users', userId, 'goals');
 
 export const updateGoal = async (userId, goalId, goalHours) => {
+    console.log('Updating goal:', goalId, 'hours:', goalHours, 'for user:', userId);
     // Use setDoc with merge to create or update the goal document with the specific ID
     const goalRef = doc(db, 'users', userId, 'goals', goalId);
     await setDoc(goalRef, {
@@ -533,6 +534,7 @@ export const updateGoal = async (userId, goalId, goalHours) => {
         hours: parseFloat(goalHours),
         updatedAt: serverTimestamp()
     }, { merge: true });
+    console.log('Goal updated successfully');
 };
 
 export const setInitialGoal = async (userId, goalHours) => {
@@ -552,8 +554,13 @@ export const subscribeGoals = (userId, callback) => {
         const goals = {};
         snapshot.docs.forEach(doc => {
             const data = doc.data();
-            goals[data.id || doc.id] = { id: doc.id, ...data };
+            // Prioritize documents where doc.id matches the goal ID (properly created documents)
+            // over documents that only have data.id field (legacy documents with random IDs)
+            const goalKey = doc.id === 'dailyStudyGoal' ? 'dailyStudyGoal' : (data.id || doc.id);
+            goals[goalKey] = { id: doc.id, ...data };
+            console.log('Goal loaded:', goalKey, 'doc.id:', doc.id, 'hours:', data.hours, 'updatedAt:', data.updatedAt);
         });
+        console.log('All goals:', goals);
         callback(goals);
     });
 };
