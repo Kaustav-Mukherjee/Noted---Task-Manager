@@ -526,21 +526,13 @@ export const subscribeUserPreferences = (userId, callback) => {
 export const goalsCollection = (userId) => collection(db, 'users', userId, 'goals');
 
 export const updateGoal = async (userId, goalId, goalHours) => {
-    // For simplicity, we'll use 'dailyStudyGoal' as the ID for now
+    // Use setDoc with merge to create or update the goal document with the specific ID
     const goalRef = doc(db, 'users', userId, 'goals', goalId);
-    await updateDoc(goalRef, {
+    await setDoc(goalRef, {
+        id: goalId,
         hours: parseFloat(goalHours),
         updatedAt: serverTimestamp()
-    }).catch(async (error) => {
-        if (error.code === 'not-found') {
-            await addDoc(goalsCollection(userId), {
-                id: goalId,
-                hours: parseFloat(goalHours),
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-        }
-    });
+    }, { merge: true });
 };
 
 export const setInitialGoal = async (userId, goalHours) => {
