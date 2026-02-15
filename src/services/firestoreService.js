@@ -10,7 +10,8 @@ import {
     orderBy,
     serverTimestamp,
     getDoc,
-    setDoc
+    setDoc,
+    getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -535,32 +536,79 @@ export const updateGoal = async (userId, goalId, goalHours) => {
         updatedAt: serverTimestamp()
     }, { merge: true });
     console.log('Goal updated successfully');
+    
+    // Clean up legacy documents with random IDs that have the same goal ID
+    try {
+        const legacyQuery = query(
+            goalsCollection(userId), 
+            where('id', '==', goalId)
+        );
+        const legacySnapshot = await getDocs(legacyQuery);
+        const deletePromises = [];
+        legacySnapshot.docs.forEach(legacyDoc => {
+            if (legacyDoc.id !== goalId) {
+                // This is a legacy document with random ID, delete it
+                console.log('Deleting legacy goal doc:', legacyDoc.id);
+                deletePromises.push(deleteDoc(doc(db, 'users', userId, 'goals', legacyDoc.id)));
+            }
+        });
+        if (deletePromises.length > 0) {
+            await Promise.all(deletePromises);
+            console.log('Cleaned up', deletePromises.length, 'legacy goal documents');
+        }
+    } catch (error) {
+        console.error('Error cleaning up legacy goals:', error);
+    }
 };
 
 export const setInitialGoal = async (userId, goalHours) => {
-    const q = query(goalsCollection(userId), where('id', '==', 'dailyStudyGoal'));
-    // If doesn't exist, create it
-    await addDoc(goalsCollection(userId), {
+    // Use setDoc with specific document ID instead of addDoc
+    const goalRef = doc(db, 'users', userId, 'goals', 'dailyStudyGoal');
+    await setDoc(goalRef, {
         id: 'dailyStudyGoal',
         hours: parseFloat(goalHours),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
 };
 
 export const subscribeGoals = (userId, callback) => {
     const q = query(goalsCollection(userId));
     return onSnapshot(q, (snapshot) => {
         const goals = {};
+        const legacyDocs = []; // Store docs with random IDs that have data.id
+        
         snapshot.docs.forEach(doc => {
             const data = doc.data();
-            // Prioritize documents where doc.id matches the goal ID (properly created documents)
-            // over documents that only have data.id field (legacy documents with random IDs)
-            const goalKey = doc.id === 'dailyStudyGoal' ? 'dailyStudyGoal' : (data.id || doc.id);
-            goals[goalKey] = { id: doc.id, ...data };
-            console.log('Goal loaded:', goalKey, 'doc.id:', doc.id, 'hours:', data.hours, 'updatedAt:', data.updatedAt);
+            
+            // If doc.id is the goal ID (e.g., 'dailyStudyGoal'), use it directly
+            if (doc.id === 'dailyStudyGoal') {
+                goals[doc.id] = { id: doc.id, ...data };
+                console.log('Goal loaded (proper ID):', doc.id, 'hours:', data.hours, 'updatedAt:', data.updatedAt?.toDate?.());
+            } else if (data.id === 'dailyStudyGoal') {
+                // This is a legacy document with random doc.id but data.id field
+                legacyDocs.push({ docId: doc.id, data });
+                console.log('Legacy goal found:', 'doc.id:', doc.id, 'data.id:', data.id, 'hours:', data.hours);
+            } else {
+                // Other goals
+                goals[data.id || doc.id] = { id: doc.id, ...data };
+            }
         });
-        console.log('All goals:', goals);
+        
+        // Only use legacy doc if no proper doc exists
+        if (!goals.dailyStudyGoal && legacyDocs.length > 0) {
+            // Use the most recently updated legacy doc
+            const mostRecent = legacyDocs.sort((a, b) => {
+                const aTime = a.data.updatedAt?.toMillis?.() || 0;
+                const bTime = b.data.updatedAt?.toMillis?.() || 0;
+                return bTime - aTime;
+            })[0];
+            goals.dailyStudyGoal = { id: mostRecent.docId, ...mostRecent.data };
+            console.log('Using legacy goal:', mostRecent.docId, 'hours:', mostRecent.data.hours);
+        }
+        
+        console.log('Final goals object:', goals);
+        console.log('dailyStudyGoal hours:', goals.dailyStudyGoal?.hours);
         callback(goals);
     });
 };
